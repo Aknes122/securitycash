@@ -78,17 +78,28 @@ const Records: React.FC<RecordsProps> = ({
     <div className="space-y-6 pb-12 transition-colors duration-300">
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h2 className="text-2xl font-bold">Meus Registros</h2>
-        <div className="flex items-center gap-2">
-          <button onClick={() => setShowFilters(!showFilters)} className="lg:hidden p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 text-zinc-400">
+        <div className="flex items-center gap-2 overflow-x-auto sm:overflow-visible pb-2 sm:pb-0 scrollbar-hide">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="lg:hidden p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+          >
             <Filter size={20} />
           </button>
           {state.userPlan === 'pro' && (
-            <button onClick={onOpenScanner} className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl font-bold shadow-lg shadow-emerald-600/20 active:scale-95 transition-all">
-              <Sparkles size={18} /> Scan IA
+            <button
+              onClick={onOpenScanner}
+              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl font-bold shadow-lg shadow-emerald-600/20 active:scale-95 transition-all whitespace-nowrap text-xs sm:text-sm"
+            >
+              <Sparkles size={18} />
+              <span>Scan IA</span>
             </button>
           )}
-          <button onClick={() => onOpenForm(null)} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl font-bold shadow-lg active:scale-95 transition-all">
-            <Plus size={20} /> Novo Registro
+          <button
+            onClick={() => onOpenForm(null)}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl font-bold shadow-lg active:scale-95 transition-all whitespace-nowrap text-xs sm:text-sm"
+          >
+            <Plus size={20} />
+            <span>Novo Registro</span>
           </button>
         </div>
       </header>
@@ -291,8 +302,8 @@ const Records: React.FC<RecordsProps> = ({
               {/* Icon & Title */}
               <div className="flex flex-col items-center text-center space-y-4">
                 <div className={`w-16 h-16 rounded-[1.5rem] flex items-center justify-center shadow-lg ${viewingTransaction.type === 'entrada'
-                    ? 'bg-emerald-500 text-white shadow-emerald-500/30'
-                    : 'bg-rose-500 text-white shadow-rose-500/30'
+                  ? 'bg-emerald-500 text-white shadow-emerald-500/30'
+                  : 'bg-rose-500 text-white shadow-rose-500/30'
                   }`}>
                   {viewingTransaction.type === 'entrada' ? <TrendingUp size={32} /> : <TrendingDown size={32} />}
                 </div>
