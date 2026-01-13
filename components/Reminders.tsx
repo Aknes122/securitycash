@@ -14,7 +14,7 @@ interface RemindersProps {
 const Reminders: React.FC<RemindersProps> = ({ state, onAddReminder, onUpdateReminder, onDeleteReminder }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
-  
+
   // Form State
   const [title, setTitle] = useState('');
   const [dueDate, setDueDate] = useState('');
@@ -69,13 +69,13 @@ const Reminders: React.FC<RemindersProps> = ({ state, onAddReminder, onUpdateRem
   const stats = useMemo(() => {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
-    
+
     const pendingCount = state.reminders.filter(r => r.status === 'pendente').length;
     const overdueCount = state.reminders.filter(r => {
       const d = new Date(r.dueDate);
       return r.status === 'pendente' && d < now;
     }).length;
-    
+
     return { pendingCount, overdueCount };
   }, [state.reminders]);
 
@@ -89,7 +89,7 @@ const Reminders: React.FC<RemindersProps> = ({ state, onAddReminder, onUpdateRem
           </h2>
           <p className="text-zinc-500 text-sm">Organize seus vencimentos e pagamentos importantes.</p>
         </div>
-        <button 
+        <button
           onClick={() => openModal()}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition-colors"
         >
@@ -123,13 +123,13 @@ const Reminders: React.FC<RemindersProps> = ({ state, onAddReminder, onUpdateRem
 
             return (
               <div key={rem.id} className={`p-4 hover:bg-zinc-800/20 transition-colors flex items-center gap-4 ${isPaid ? 'opacity-60' : ''}`}>
-                <button 
+                <button
                   onClick={() => onUpdateReminder(rem.id, { status: isPaid ? 'pendente' : 'pago' })}
                   className={`flex-shrink-0 transition-colors ${isPaid ? 'text-emerald-500' : 'text-zinc-600 hover:text-zinc-400'}`}
                 >
                   {isPaid ? <CheckCircle2 size={24} /> : <Circle size={24} />}
                 </button>
-                
+
                 <div className="flex-1 space-y-0.5">
                   <h4 className={`font-semibold text-sm ${isPaid ? 'line-through text-zinc-500' : ''}`}>
                     {rem.title}
@@ -151,13 +151,13 @@ const Reminders: React.FC<RemindersProps> = ({ state, onAddReminder, onUpdateRem
                 </div>
 
                 <div className="flex gap-2">
-                  <button 
+                  <button
                     onClick={() => openModal(rem)}
                     className="p-2 text-zinc-600 hover:text-white hover:bg-zinc-800 rounded-lg"
                   >
                     <Edit2 size={16} />
                   </button>
-                  <button 
+                  <button
                     onClick={() => onDeleteReminder(rem.id)}
                     className="p-2 text-zinc-600 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg"
                   >
@@ -202,7 +202,7 @@ const Reminders: React.FC<RemindersProps> = ({ state, onAddReminder, onUpdateRem
                   required
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Vencimento</label>
                   <input

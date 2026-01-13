@@ -187,7 +187,7 @@ const App: React.FC = () => {
       {/* MODAL GLOBAL DE REGISTRO */}
       {isFormOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-[2rem] shadow-2xl p-6 md:p-8 relative animate-in zoom-in duration-200">
+          <div className="w-full max-w-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-[2rem] shadow-2xl p-5 sm:p-8 relative animate-in zoom-in duration-200">
             <button
               onClick={() => { setIsFormOpen(false); setPrefilledData(null); }}
               className="absolute right-4 top-4 md:right-6 md:top-6 text-zinc-400 hover:text-zinc-900 dark:hover:text-white"

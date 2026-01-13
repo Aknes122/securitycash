@@ -182,7 +182,7 @@ const Goals: React.FC<GoalsProps> = ({ state, onAddGoal, onUpdateGoal, onDeleteG
                   required
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Valor Alvo</label>
                   <input
