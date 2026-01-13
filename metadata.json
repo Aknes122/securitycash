@@ -1,0 +1,7 @@
+{
+  "name": "SecurityCash",
+  "description": "Um aplicativo de finanças limpo e funcional para rastrear receitas e despesas com um painel detalhado e insights de segurança financeira.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
