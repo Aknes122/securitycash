@@ -63,6 +63,12 @@
         -ms-overflow-style: none;
         scrollbar-width: none;
       }
+      /* Previne zoom automático no iOS ao focar em inputs */
+      @media screen and (max-width: 768px) {
+        input, select, textarea {
+          font-size: 16px !important;
+        }
+      }
     </style>
   <script type="importmap">
 {
