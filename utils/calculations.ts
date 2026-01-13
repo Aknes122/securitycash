@@ -12,7 +12,7 @@ export const filterTransactions = (
   return transactions.filter((t) => {
     // Exact Date Range filter (prioritizes over fixed period if either is set)
     const hasDateRange = filters.startDate || filters.endDate;
-    
+
     if (hasDateRange) {
       if (filters.startDate && t.date < filters.startDate) {
         return false;
@@ -101,10 +101,26 @@ export const getDailyChartData = (transactions: Transaction[], period: PeriodFil
   const daily: Record<string, number> = {};
 
   // For 7d and 30d, fill missing days with zero
+  // For 7d and 30d, fill missing days with zero
   if (period !== 'all') {
-    const days = period === '7d' ? 7 : 30;
+    let days = 0;
+    let startDate = new Date();
+    startDate.setHours(0, 0, 0, 0);
+
+    if (period === '7d') {
+      days = 7;
+    } else if (period === '30d') {
+      days = 30;
+    } else if (period === 'custom' && transactions.length > 0) {
+      // For custom, we might want to fill between min/max or specific filter range
+      // But getDailyChartData doesn't have access to Filters.
+      // Let's at least handle the basic fixed periods. 
+      // If custom, we'll just use what's in transactions.
+      days = 0;
+    }
+
     for (let i = 0; i < days; i++) {
-      const d = new Date();
+      const d = new Date(startDate);
       d.setDate(d.getDate() - i);
       const iso = d.toISOString().split('T')[0];
       daily[iso] = 0;

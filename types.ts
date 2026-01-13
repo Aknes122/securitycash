@@ -34,7 +34,7 @@ export interface Goal {
   deadline?: string;
 }
 
-export type PeriodFilter = '7d' | '30d' | 'all';
+export type PeriodFilter = '7d' | '30d' | 'all' | 'custom';
 
 export interface Filters {
   period: PeriodFilter;
