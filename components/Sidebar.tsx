@@ -191,8 +191,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                     key={item.id}
                     onClick={() => handleNavigate(item.id as Page)}
                     className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-xl transition-all ${isActive
-                        ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold'
-                        : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900'
+                      ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold'
+                      : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900'
                       }`}
                   >
                     <Icon size={20} />
@@ -206,17 +206,20 @@ const Sidebar: React.FC<SidebarProps> = ({
               {userPlan === 'pro' && (
                 <button
                   onClick={() => { setIsMobileMenuOpen(false); onScanIA?.(); }}
-                  className="w-full flex items-center justify-center gap-2.5 p-3.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold shadow-lg shadow-black/10 transition-all active:scale-[0.98]"
+                  className="w-full flex items-center justify-center gap-3 p-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-lg shadow-emerald-500/20 active:scale-[0.98] transition-all"
                 >
-                  <Camera size={18} />
-                  <span className="text-sm">Scan IA</span>
+                  <div className="relative">
+                    <Camera size={20} />
+                    <Sparkles size={12} className="absolute -top-2 -right-2 text-amber-300 animate-pulse" />
+                  </div>
+                  <span className="text-sm">Scan IA com Foto</span>
                 </button>
               )}
               <button
                 onClick={() => handleNavigate('profile')}
                 className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-xl transition-all ${currentPage === 'profile'
-                    ? 'bg-zinc-100 dark:bg-zinc-900 text-zinc-900 dark:text-white font-bold'
-                    : 'text-zinc-500 dark:text-zinc-400'
+                  ? 'bg-zinc-100 dark:bg-zinc-900 text-zinc-900 dark:text-white font-bold'
+                  : 'text-zinc-500 dark:text-zinc-400'
                   }`}
               >
                 <User size={20} />
