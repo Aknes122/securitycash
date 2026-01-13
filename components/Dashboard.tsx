@@ -42,27 +42,27 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ state, isLoading, onUpdateFilters, onAddRecord, onScanIA, onGoToReminders, onGoToGoals }) => {
   const filteredTransactions = useMemo(() => {
-    // A Dashboard ignora filtros de pesquisa e categoria para mostrar dados gerais do período
+    // A Dashboard agora usa seu próprio estado de filtros, independente da aba de registros
     const dashboardFilters: Filters = {
-      ...state.filters,
-      search: '',
-      categoryId: 'all',
-      type: 'all',
-      // Se for personalizado, mantém as datas. Senão, limpa para usar a lógica de período (7d/30d/all)
-      startDate: state.filters.period === 'custom' ? state.filters.startDate : '',
-      endDate: state.filters.period === 'custom' ? state.filters.endDate : ''
+      ...state.filters, // Pega o esqueleto
+      search: '',      // Ignora busca global
+      categoryId: 'all', // Ignora categoria global
+      type: 'all',     // Ignora tipo global
+      startDate: state.dashboardFilters.startDate,
+      endDate: state.dashboardFilters.endDate,
+      period: state.dashboardFilters.period
     };
     return filterTransactions(state.transactions, dashboardFilters);
-  }, [state.transactions, state.filters.period, state.filters.startDate, state.filters.endDate]);
+  }, [state.transactions, state.dashboardFilters]);
 
   const kpis = useMemo(() =>
-    calculateKPIs(filteredTransactions, state.filters.period),
-    [filteredTransactions, state.filters.period]
+    calculateKPIs(filteredTransactions, state.dashboardFilters.period),
+    [filteredTransactions, state.dashboardFilters.period]
   );
 
   const dailyData = useMemo(() =>
-    getDailyChartData(filteredTransactions, state.filters.period),
-    [filteredTransactions, state.filters.period]
+    getDailyChartData(filteredTransactions, state.dashboardFilters.period),
+    [filteredTransactions, state.dashboardFilters.period]
   );
 
   const categoryData = useMemo(() =>
@@ -132,7 +132,7 @@ const Dashboard: React.FC<DashboardProps> = ({ state, isLoading, onUpdateFilters
             <button
               key={p}
               onClick={() => onUpdateFilters({ period: p })}
-              className={`px-3 sm:px-5 py-2 text-[10px] sm:text-xs rounded-md font-medium transition-all ${state.filters.period === p ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+              className={`px-3 sm:px-5 py-2 text-[10px] sm:text-xs rounded-md font-medium transition-all ${state.dashboardFilters.period === p ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
                 }`}
             >
               {p === '7d' ? '7 dias' : p === '30d' ? '30 dias' : p === 'all' ? 'Total' : 'Personalizado'}
@@ -140,13 +140,13 @@ const Dashboard: React.FC<DashboardProps> = ({ state, isLoading, onUpdateFilters
           ))}
         </div>
 
-        {state.filters.period === 'custom' && (
+        {state.dashboardFilters.period === 'custom' && (
           <div className="flex flex-wrap justify-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
             <div className="flex flex-col gap-1">
               <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest ml-1">Início</label>
               <input
                 type="date"
-                value={state.filters.startDate}
+                value={state.dashboardFilters.startDate}
                 onChange={(e) => onUpdateFilters({ startDate: e.target.value })}
                 className="h-10 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:ring-1 focus:ring-blue-500"
               />
@@ -155,7 +155,7 @@ const Dashboard: React.FC<DashboardProps> = ({ state, isLoading, onUpdateFilters
               <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest ml-1">Fim</label>
               <input
                 type="date"
-                value={state.filters.endDate}
+                value={state.dashboardFilters.endDate}
                 onChange={(e) => onUpdateFilters({ endDate: e.target.value })}
                 className="h-10 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:ring-1 focus:ring-blue-500"
               />

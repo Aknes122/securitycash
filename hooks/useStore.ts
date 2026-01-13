@@ -14,7 +14,8 @@ export const useStore = (userId?: string) => {
         reminders: [],
         goals: [],
         userPlan: 'basic',
-        filters: { period: '30d', categoryId: 'all', search: '', type: 'all', startDate: '', endDate: '' }
+        filters: { period: '30d', categoryId: 'all', search: '', type: 'all', startDate: '', endDate: '' },
+        dashboardFilters: { period: '30d', startDate: '', endDate: '' }
       };
     }
 
@@ -27,6 +28,7 @@ export const useStore = (userId?: string) => {
         if (!parsed.userPlan) parsed.userPlan = 'basic';
         if (!parsed.filters.startDate) parsed.filters.startDate = '';
         if (!parsed.filters.endDate) parsed.filters.endDate = '';
+        if (!parsed.dashboardFilters) parsed.dashboardFilters = { period: '30d', startDate: '', endDate: '' };
         // Ensure categories are present even if saved data is old/broken, or merge? 
         // For now trusting saved, but if categories missing could fallback.
         if (!parsed.categories || parsed.categories.length === 0) parsed.categories = SEED_CATEGORIES;
@@ -48,6 +50,11 @@ export const useStore = (userId?: string) => {
         categoryId: 'all',
         search: '',
         type: 'all',
+        startDate: '',
+        endDate: ''
+      },
+      dashboardFilters: {
+        period: '30d',
         startDate: '',
         endDate: ''
       }
@@ -74,10 +81,17 @@ export const useStore = (userId?: string) => {
   }, []);
 
   const updateFilters = useCallback((newFilters: Partial<Filters>) => {
-    setIsLoading(true);
     setState(prev => ({
       ...prev,
       filters: { ...prev.filters, ...newFilters }
+    }));
+  }, []);
+
+  const updateDashboardFilters = useCallback((newFilters: Partial<AppState['dashboardFilters']>) => {
+    setIsLoading(true);
+    setState(prev => ({
+      ...prev,
+      dashboardFilters: { ...prev.dashboardFilters, ...newFilters }
     }));
     setTimeout(() => setIsLoading(false), 400); // Simulate skeleton delay
   }, []);
@@ -172,6 +186,7 @@ export const useStore = (userId?: string) => {
     isLoading,
     setPlan,
     updateFilters,
+    updateDashboardFilters,
     addTransaction,
     updateTransaction,
     deleteTransaction,

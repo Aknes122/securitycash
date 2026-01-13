@@ -39,6 +39,7 @@ const App: React.FC = () => {
     isLoading,
     setPlan,
     updateFilters,
+    updateDashboardFilters,
     addTransaction,
     updateTransaction,
     deleteTransaction,
@@ -133,7 +134,7 @@ const App: React.FC = () => {
             <Dashboard
               state={state}
               isLoading={isLoading}
-              onUpdateFilters={updateFilters}
+              onUpdateFilters={updateDashboardFilters}
               onAddRecord={() => handleOpenForm()}
               onScanIA={() => setIsScannerOpen(true)}
               onGoToReminders={() => setPage('reminders')}

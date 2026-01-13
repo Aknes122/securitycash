@@ -51,6 +51,11 @@ export interface AppState {
   reminders: Reminder[];
   goals: Goal[];
   filters: Filters;
+  dashboardFilters: {
+    period: PeriodFilter;
+    startDate: string;
+    endDate: string;
+  };
   userPlan: UserPlan;
 }
 
