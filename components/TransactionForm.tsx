@@ -23,7 +23,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ categories, initialDa
     if (!amount || parseFloat(amount) <= 0) newErrors.amount = 'Valor deve ser maior que zero';
     if (!date) newErrors.date = 'Data é obrigatória';
     if (type === 'despesa' && !categoryId) newErrors.categoryId = 'Categoria é obrigatória para despesas';
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -63,7 +63,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ categories, initialDa
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-1">
           <label className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">Data</label>
           <input

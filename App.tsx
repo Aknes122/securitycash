@@ -162,7 +162,7 @@ const App: React.FC = () => {
       {/* MODAL GLOBAL DE SCANNER IA (Exclusivo PRO) */}
       {isScannerOpen && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="w-full max-w-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-[2rem] shadow-2xl p-6 relative animate-in zoom-in duration-200 text-zinc-900 dark:text-white">
+          <div className="w-full max-w-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-[2rem] shadow-2xl p-5 md:p-6 relative animate-in zoom-in duration-200 text-zinc-900 dark:text-white">
             <button onClick={() => setIsScannerOpen(false)} className="absolute right-5 top-5 p-2 bg-zinc-100 dark:bg-zinc-800 rounded-full text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors">
               <X size={16} />
             </button>
@@ -187,14 +187,14 @@ const App: React.FC = () => {
       {/* MODAL GLOBAL DE REGISTRO */}
       {isFormOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-[2rem] shadow-2xl p-8 relative animate-in zoom-in duration-200">
+          <div className="w-full max-w-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-[2rem] shadow-2xl p-6 md:p-8 relative animate-in zoom-in duration-200">
             <button
               onClick={() => { setIsFormOpen(false); setPrefilledData(null); }}
-              className="absolute right-6 top-6 text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
+              className="absolute right-4 top-4 md:right-6 md:top-6 text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
             >
-              <X size={24} />
+              <X size={20} />
             </button>
-            <h3 className="text-xl font-bold mb-8 text-zinc-900 dark:text-white">
+            <h3 className="text-lg md:text-xl font-bold mb-6 md:mb-8 text-zinc-900 dark:text-white">
               {editingTransaction ? 'Editar Registro' : 'Novo Registro'}
             </h3>
             <TransactionForm
