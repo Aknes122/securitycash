@@ -16,7 +16,18 @@ const AIScanner: React.FC<AIScannerProps> = ({ categories, onScanComplete, onClo
   const [needsAuth, setNeedsAuth] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  const openPicker = (useCamera: boolean) => {
+    if (!fileInputRef.current) return;
+
+    if (useCamera) {
+      fileInputRef.current.setAttribute('capture', 'environment');
+    } else {
+      fileInputRef.current.removeAttribute('capture');
+    }
+
+    fileInputRef.current.click();
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -28,6 +39,8 @@ const AIScanner: React.FC<AIScannerProps> = ({ categories, onScanComplete, onClo
       };
       reader.readAsDataURL(file);
     }
+    // Reset value to allow selecting the same file again if needed
+    e.target.value = '';
   };
 
   const processImage = async (base64Data: string) => {
@@ -145,7 +158,7 @@ const AIScanner: React.FC<AIScannerProps> = ({ categories, onScanComplete, onClo
 
       <div className="grid grid-cols-2 gap-3">
         <button
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => openPicker(false)}
           disabled={isProcessing}
           className="py-3 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2"
         >
@@ -153,7 +166,7 @@ const AIScanner: React.FC<AIScannerProps> = ({ categories, onScanComplete, onClo
         </button>
 
         <button
-          onClick={() => cameraInputRef.current?.click()}
+          onClick={() => openPicker(true)}
           disabled={isProcessing}
           className="py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-xs shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2"
         >
@@ -166,15 +179,6 @@ const AIScanner: React.FC<AIScannerProps> = ({ categories, onScanComplete, onClo
         accept="image/*"
         className="hidden"
         ref={fileInputRef}
-        onChange={handleFileChange}
-      />
-
-      <input
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
-        ref={cameraInputRef}
         onChange={handleFileChange}
       />
 
