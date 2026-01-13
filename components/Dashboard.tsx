@@ -41,10 +41,18 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ state, isLoading, onUpdateFilters, onAddRecord, onScanIA, onGoToReminders, onGoToGoals }) => {
-  const filteredTransactions = useMemo(() =>
-    filterTransactions(state.transactions, state.filters),
-    [state.transactions, state.filters]
-  );
+  const filteredTransactions = useMemo(() => {
+    // A Dashboard ignora filtros de pesquisa e categoria para mostrar dados gerais do período
+    const dashboardFilters: Filters = {
+      ...state.filters,
+      search: '',
+      categoryId: 'all',
+      type: 'all',
+      startDate: '',
+      endDate: ''
+    };
+    return filterTransactions(state.transactions, dashboardFilters);
+  }, [state.transactions, state.filters.period]);
 
   const kpis = useMemo(() =>
     calculateKPIs(filteredTransactions, state.filters.period),
