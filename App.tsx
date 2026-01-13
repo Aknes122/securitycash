@@ -155,7 +155,7 @@ const App: React.FC = () => {
           {page === 'comparison' && <Comparison state={state} />}
           {page === 'reminders' && <Reminders state={state} onAddReminder={addReminder} onUpdateReminder={updateReminder} onDeleteReminder={deleteReminder} />}
           {page === 'goals' && <Goals state={state} onAddGoal={addGoal} onUpdateGoal={updateGoal} onDeleteGoal={deleteGoal} />}
-          {page === 'profile' && <Profile currentPlan={state.userPlan} onSetPlan={setPlan} onResetData={resetData} onDeleteAccount={deleteAccount} />}
+          {page === 'profile' && <Profile user={session?.user} currentPlan={state.userPlan} onSetPlan={setPlan} onResetData={resetData} onDeleteAccount={deleteAccount} />}
         </div>
       </main>
 

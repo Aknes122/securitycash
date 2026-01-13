@@ -1,17 +1,19 @@
 
 import React, { useState, useEffect } from 'react';
 import { User, Shield, RotateCcw, AlertTriangle, CreditCard, CheckCircle2, ShieldCheck, ChevronRight, Crown, Sparkles, Gift, Copy, Share2, LogOut, Trash2, X, Timer } from 'lucide-react';
+import { User as SupabaseUser } from '@supabase/supabase-js';
 import { formatCurrency } from '../utils/formatters';
 import { UserPlan } from '../types';
 
 interface ProfileProps {
+  user: SupabaseUser | null;
   currentPlan: UserPlan;
   onSetPlan: (plan: UserPlan) => void;
   onResetData: () => void;
   onDeleteAccount: () => void;
 }
 
-const Profile: React.FC<ProfileProps> = ({ currentPlan, onSetPlan, onResetData, onDeleteAccount }) => {
+const Profile: React.FC<ProfileProps> = ({ user, currentPlan, onSetPlan, onResetData, onDeleteAccount }) => {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showCloseAccountModal, setShowCloseAccountModal] = useState(false);
   const [countdown, setCountdown] = useState(5);
@@ -94,8 +96,8 @@ const Profile: React.FC<ProfileProps> = ({ currentPlan, onSetPlan, onResetData, 
             <button
               onClick={() => onSetPlan('basic')}
               className={`relative p-5 rounded-2xl border-2 text-left transition-all ${currentPlan === 'basic'
-                  ? 'border-blue-600 bg-blue-50/50 dark:bg-blue-600/5'
-                  : 'border-zinc-100 dark:border-zinc-800 hover:border-zinc-200 dark:hover:border-zinc-700'
+                ? 'border-blue-600 bg-blue-50/50 dark:bg-blue-600/5'
+                : 'border-zinc-100 dark:border-zinc-800 hover:border-zinc-200 dark:hover:border-zinc-700'
                 }`}
             >
               {currentPlan === 'basic' && (
@@ -121,8 +123,8 @@ const Profile: React.FC<ProfileProps> = ({ currentPlan, onSetPlan, onResetData, 
             <button
               onClick={() => onSetPlan('pro')}
               className={`relative p-5 rounded-2xl border-2 text-left transition-all overflow-hidden ${currentPlan === 'pro'
-                  ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-500/5'
-                  : 'border-zinc-100 dark:border-zinc-800 hover:border-zinc-200 dark:hover:border-zinc-700'
+                ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-500/5'
+                : 'border-zinc-100 dark:border-zinc-800 hover:border-zinc-200 dark:hover:border-zinc-700'
                 }`}
             >
               {currentPlan === 'pro' && (
@@ -170,11 +172,15 @@ const Profile: React.FC<ProfileProps> = ({ currentPlan, onSetPlan, onResetData, 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div className="space-y-1">
               <label className="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase font-bold tracking-widest">Nome</label>
-              <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Usuário SecurityCash</p>
+              <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                {user?.user_metadata?.full_name || 'Usuário SecurityCash'}
+              </p>
             </div>
             <div className="space-y-1">
               <label className="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase font-bold tracking-widest">Email</label>
-              <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">usuario@securitycash.com.br</p>
+              <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                {user?.email || 'usuario@securitycash.com.br'}
+              </p>
             </div>
           </div>
         </section>
