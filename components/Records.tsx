@@ -228,7 +228,50 @@ const Records: React.FC<RecordsProps> = ({
         </div>
       </div>
 
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-sm">
+      {/* Visualização em Cartões (Mobile) */}
+      <div className="grid grid-cols-1 gap-4 lg:hidden">
+        {paginated.length > 0 ? paginated.map(t => (
+          <div key={t.id} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-5 space-y-4 shadow-sm active:scale-[0.98] transition-all group" onClick={() => setViewingTransaction(t)}>
+            <div className="flex justify-between items-start">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${t.type === 'entrada' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'}`}>
+                  {t.type === 'entrada' ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
+                </div>
+                <div>
+                  <h4 className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">{t.description}</h4>
+                  <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider">{formatDate(t.date)}</p>
+                </div>
+              </div>
+              <span className={`text-sm font-black ${t.type === 'entrada' ? 'text-emerald-500' : 'text-zinc-900 dark:text-zinc-100'}`}>
+                {t.type === 'entrada' ? '+' : '-'} {formatCurrency(t.amount)}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t border-zinc-100 dark:border-zinc-800">
+              <span className="bg-zinc-100 dark:bg-zinc-800 px-3 py-1 rounded-full text-zinc-600 dark:text-zinc-400 text-[10px] font-bold uppercase tracking-tight">
+                {state.categories.find(c => c.id === t.categoryId)?.name || 'Geral'}
+              </span>
+              <div className="flex items-center gap-1">
+                <button onClick={(e) => { e.stopPropagation(); onOpenForm(t); }} className="p-2 text-zinc-400 hover:text-blue-600"><Edit2 size={16} /></button>
+                <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm(t.id); }} className="p-2 text-zinc-400 hover:text-rose-600"><Trash2 size={16} /></button>
+              </div>
+            </div>
+          </div>
+        )) : (
+          <div className="py-20 text-center bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-16 h-16 bg-zinc-50 dark:bg-zinc-950 rounded-full flex items-center justify-center text-zinc-200 dark:text-zinc-800">
+                <Search size={32} />
+              </div>
+              <p className="text-sm font-medium text-zinc-500">Nenhum registro encontrado.</p>
+              <button onClick={clearFilters} className="text-xs font-bold text-blue-500 uppercase tracking-widest hover:underline">Limpar Filtros</button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Tabela (Desktop) */}
+      <div className="hidden lg:block bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left min-w-[700px]">
             <thead>

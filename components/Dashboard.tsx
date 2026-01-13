@@ -140,12 +140,12 @@ const Dashboard: React.FC<DashboardProps> = ({ state, isLoading, onUpdateFilters
           { label: 'Saldo', value: kpis.totalIncomes - kpis.totalExpenses, icon: TrendingDown, color: 'text-blue-500' },
           { label: 'Maior Gasto', value: topCategoryName, icon: Tag, color: 'text-amber-500', isCurrency: false },
         ].map((item, i) => (
-          <div key={i} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-4 sm:p-5 rounded-3xl space-y-2 shadow-sm">
+          <div key={i} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-3.5 sm:p-5 rounded-3xl space-y-1 sm:space-y-2 shadow-sm min-w-0">
             <div className="flex items-center justify-between text-zinc-400">
-              <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest truncate mr-1">{item.label}</span>
-              <item.icon size={16} className={item.color} />
+              <span className="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest truncate mr-1">{item.label}</span>
+              <item.icon size={14} className={`${item.color} sm:w-4 sm:h-4`} />
             </div>
-            <p className={`font-bold text-zinc-900 dark:text-white truncate ${item.isCurrency === false ? 'text-sm sm:text-lg' : 'text-lg sm:text-2xl'}`}>
+            <p className={`font-black text-zinc-900 dark:text-white truncate ${item.isCurrency === false ? 'text-xs sm:text-lg' : 'text-sm sm:text-2xl'}`}>
               {item.isCurrency === false ? item.value : formatCurrency(item.value as number)}
             </p>
           </div>

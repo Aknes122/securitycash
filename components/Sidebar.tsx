@@ -1,17 +1,17 @@
 
 import React, { useState } from 'react';
-import { 
-  LayoutDashboard, 
-  ListOrdered, 
-  Tag, 
-  ArrowLeftRight, 
-  Bell, 
-  User, 
-  LogOut, 
-  Menu, 
-  X, 
+import {
+  LayoutDashboard,
+  ListOrdered,
+  Tag,
+  ArrowLeftRight,
+  Bell,
+  User,
+  LogOut,
+  Menu,
+  X,
   Target,
-  Sun, 
+  Sun,
   Moon,
   Sparkles,
   Camera
@@ -44,11 +44,11 @@ const Logo = () => (
   </div>
 );
 
-const Sidebar: React.FC<SidebarProps> = ({ 
-  currentPage, 
-  setPage, 
-  onLogout, 
-  theme, 
+const Sidebar: React.FC<SidebarProps> = ({
+  currentPage,
+  setPage,
+  onLogout,
+  theme,
   toggleTheme,
   userPlan = 'basic',
   onScanIA
@@ -74,7 +74,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Desktop Sidebar - Border suavizada e largura fixa clara */}
       <aside className="hidden lg:flex w-72 flex-shrink-0 border-r border-zinc-200/50 dark:border-zinc-800/50 flex-col h-screen fixed left-0 top-0 bg-white dark:bg-zinc-950 z-50 transition-colors duration-300">
         <div className="p-10 pb-8">
-          <button 
+          <button
             onClick={() => handleNavigate('dashboard')}
             className="text-left outline-none"
           >
@@ -90,11 +90,10 @@ const Sidebar: React.FC<SidebarProps> = ({
               <button
                 key={item.id}
                 onClick={() => handleNavigate(item.id as Page)}
-                className={`w-full flex items-center gap-4 px-4 py-4 rounded-2xl transition-all duration-300 ${
-                  isActive 
-                    ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold shadow-xl shadow-black/10 dark:shadow-white/5' 
+                className={`w-full flex items-center gap-4 px-4 py-4 rounded-2xl transition-all duration-300 ${isActive
+                    ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold shadow-xl shadow-black/10 dark:shadow-white/5'
                     : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-900'
-                }`}
+                  }`}
               >
                 <Icon size={20} className={isActive ? 'text-blue-500' : ''} />
                 <span className="text-sm">{item.label}</span>
@@ -127,16 +126,15 @@ const Sidebar: React.FC<SidebarProps> = ({
 
           <button
             onClick={() => handleNavigate('profile')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-              currentPage === 'profile'
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${currentPage === 'profile'
                 ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold'
                 : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-900'
-            }`}
+              }`}
           >
             <User size={18} />
             <span className="text-sm font-medium">Meu Perfil</span>
           </button>
-          
+
           <button
             onClick={onLogout}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all"
@@ -148,21 +146,23 @@ const Sidebar: React.FC<SidebarProps> = ({
       </aside>
 
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 w-full h-20 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-6 z-50 transition-colors duration-300">
-        <div className="flex items-center gap-4">
-          <button 
+      <header className="lg:hidden fixed top-0 left-0 w-full h-16 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-6 z-50 transition-colors duration-300">
+        <div className="flex items-center gap-3">
+          <button
             onClick={() => setIsMobileMenuOpen(true)}
             className="p-2 -ml-2 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
           >
-            <Menu size={28} />
+            <Menu size={24} />
           </button>
-          <Logo />
+          <div className="scale-90 origin-left">
+            <Logo />
+          </div>
         </div>
-        <button 
+        <button
           onClick={toggleTheme}
           className="p-2 text-zinc-500 dark:text-zinc-400"
         >
-          {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+          {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
         </button>
       </header>
 
@@ -172,8 +172,8 @@ const Sidebar: React.FC<SidebarProps> = ({
           <div className="absolute left-0 top-0 h-full w-[85%] max-w-sm bg-white dark:bg-zinc-900 shadow-2xl animate-in slide-in-from-left duration-300 border-r border-zinc-200 dark:border-zinc-800 flex flex-col">
             <div className="p-8 flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800">
               <Logo />
-              <button 
-                onClick={() => setIsMobileMenuOpen(false)} 
+              <button
+                onClick={() => setIsMobileMenuOpen(false)}
                 className="p-2 bg-zinc-100 dark:bg-zinc-800 rounded-full text-zinc-500 dark:text-zinc-400"
               >
                 <X size={20} />
@@ -188,11 +188,10 @@ const Sidebar: React.FC<SidebarProps> = ({
                   <button
                     key={item.id}
                     onClick={() => handleNavigate(item.id as Page)}
-                    className={`w-full flex items-center gap-4 px-4 py-4 rounded-2xl transition-all ${
-                      isActive 
-                        ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold shadow-lg' 
+                    className={`w-full flex items-center gap-4 px-4 py-4 rounded-2xl transition-all ${isActive
+                        ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold shadow-lg'
                         : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-                    }`}
+                      }`}
                   >
                     <Icon size={22} className={isActive ? 'text-blue-500' : ''} />
                     <span className="text-base">{item.label}</span>
@@ -211,15 +210,14 @@ const Sidebar: React.FC<SidebarProps> = ({
                   <span>Scan IA com Foto</span>
                 </button>
               )}
-               <button
-                  onClick={() => handleNavigate('profile')}
-                  className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all ${
-                    currentPage === 'profile' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-bold' : 'text-zinc-500 dark:text-zinc-400'
+              <button
+                onClick={() => handleNavigate('profile')}
+                className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all ${currentPage === 'profile' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-bold' : 'text-zinc-500 dark:text-zinc-400'
                   }`}
-                >
-                  <User size={20} />
-                  <span className="text-base">Meu Perfil</span>
-                </button>
+              >
+                <User size={20} />
+                <span className="text-base">Meu Perfil</span>
+              </button>
               <button
                 onClick={onLogout}
                 className="w-full flex items-center justify-center gap-3 p-4 rounded-2xl bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20 text-rose-600 dark:text-rose-500 font-bold active:scale-[0.98] transition-all"
