@@ -16,6 +16,19 @@ const AIScanner: React.FC<AIScannerProps> = ({ categories, onScanComplete, onClo
   const [needsAuth, setNeedsAuth] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+        processImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const processImage = async (base64Data: string) => {
     setIsProcessing(true);
@@ -140,7 +153,7 @@ const AIScanner: React.FC<AIScannerProps> = ({ categories, onScanComplete, onClo
         </button>
 
         <button
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => cameraInputRef.current?.click()}
           disabled={isProcessing}
           className="py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-xs shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2"
         >
@@ -151,20 +164,18 @@ const AIScanner: React.FC<AIScannerProps> = ({ categories, onScanComplete, onClo
       <input
         type="file"
         accept="image/*"
-        capture="environment"
         className="hidden"
         ref={fileInputRef}
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-              setImagePreview(reader.result as string);
-              processImage(reader.result as string);
-            };
-            reader.readAsDataURL(file);
-          }
-        }}
+        onChange={handleFileChange}
+      />
+
+      <input
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        ref={cameraInputRef}
+        onChange={handleFileChange}
       />
 
       <div className="flex flex-col items-center justify-center gap-1 pt-2 border-t border-zinc-100 dark:border-zinc-800">
