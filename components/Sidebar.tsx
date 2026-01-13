@@ -91,8 +91,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                 key={item.id}
                 onClick={() => handleNavigate(item.id as Page)}
                 className={`w-full flex items-center gap-4 px-4 py-4 rounded-2xl transition-all duration-300 ${isActive
-                    ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold shadow-xl shadow-black/10 dark:shadow-white/5'
-                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-900'
+                  ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold shadow-xl shadow-black/10 dark:shadow-white/5'
+                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-900'
                   }`}
               >
                 <Icon size={20} className={isActive ? 'text-blue-500' : ''} />
@@ -127,8 +127,8 @@ const Sidebar: React.FC<SidebarProps> = ({
           <button
             onClick={() => handleNavigate('profile')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${currentPage === 'profile'
-                ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold'
-                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-900'
+              ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold'
+              : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-900'
               }`}
           >
             <User size={18} />
@@ -168,19 +168,21 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="absolute left-0 top-0 h-full w-[85%] max-w-sm bg-white dark:bg-zinc-900 shadow-2xl animate-in slide-in-from-left duration-300 border-r border-zinc-200 dark:border-zinc-800 flex flex-col">
-            <div className="p-8 flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800">
-              <Logo />
+        <div className="lg:hidden fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="absolute left-0 top-0 h-full w-[80%] max-w-[300px] bg-white dark:bg-zinc-950 shadow-2xl animate-in slide-in-from-left duration-300 border-r border-zinc-200 dark:border-zinc-800 flex flex-col">
+            <div className="p-6 flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800">
+              <div className="scale-90 origin-left">
+                <Logo />
+              </div>
               <button
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-2 bg-zinc-100 dark:bg-zinc-800 rounded-full text-zinc-500 dark:text-zinc-400"
+                className="p-2 bg-zinc-100 dark:bg-zinc-900 rounded-full text-zinc-500 dark:text-zinc-400"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
 
-            <nav className="flex-1 p-6 space-y-2 overflow-y-auto">
+            <nav className="flex-1 p-5 space-y-1 overflow-y-auto">
               {menuItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = currentPage === item.id;
@@ -188,42 +190,44 @@ const Sidebar: React.FC<SidebarProps> = ({
                   <button
                     key={item.id}
                     onClick={() => handleNavigate(item.id as Page)}
-                    className={`w-full flex items-center gap-4 px-4 py-4 rounded-2xl transition-all ${isActive
-                        ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold shadow-lg'
-                        : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                    className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-xl transition-all ${isActive
+                        ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold'
+                        : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900'
                       }`}
                   >
-                    <Icon size={22} className={isActive ? 'text-blue-500' : ''} />
-                    <span className="text-base">{item.label}</span>
+                    <Icon size={20} />
+                    <span className="text-sm">{item.label}</span>
                   </button>
                 );
               })}
             </nav>
 
-            <div className="p-6 border-t border-zinc-200 dark:border-zinc-800 space-y-4">
+            <div className="p-5 border-t border-zinc-200 dark:border-zinc-800 space-y-3">
               {userPlan === 'pro' && (
                 <button
                   onClick={() => { setIsMobileMenuOpen(false); onScanIA?.(); }}
-                  className="w-full flex items-center justify-center gap-3 p-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-lg shadow-emerald-500/20 active:scale-[0.98] transition-all"
+                  className="w-full flex items-center justify-center gap-2.5 p-3.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold shadow-lg shadow-black/10 transition-all active:scale-[0.98]"
                 >
-                  <Camera size={20} />
-                  <span>Scan IA com Foto</span>
+                  <Camera size={18} />
+                  <span className="text-sm">Scan IA</span>
                 </button>
               )}
               <button
                 onClick={() => handleNavigate('profile')}
-                className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all ${currentPage === 'profile' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-bold' : 'text-zinc-500 dark:text-zinc-400'
+                className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-xl transition-all ${currentPage === 'profile'
+                    ? 'bg-zinc-100 dark:bg-zinc-900 text-zinc-900 dark:text-white font-bold'
+                    : 'text-zinc-500 dark:text-zinc-400'
                   }`}
               >
                 <User size={20} />
-                <span className="text-base">Meu Perfil</span>
+                <span className="text-sm">Meu Perfil</span>
               </button>
               <button
                 onClick={onLogout}
-                className="w-full flex items-center justify-center gap-3 p-4 rounded-2xl bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20 text-rose-600 dark:text-rose-500 font-bold active:scale-[0.98] transition-all"
+                className="w-full flex items-center justify-center gap-2 p-3 text-rose-600 dark:text-rose-500 font-bold hover:bg-rose-50 dark:hover:bg-rose-500/5 transition-all"
               >
-                <LogOut size={20} />
-                Sair
+                <LogOut size={18} />
+                <span className="text-sm">Sair</span>
               </button>
             </div>
           </div>
