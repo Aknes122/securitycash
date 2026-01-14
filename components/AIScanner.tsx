@@ -61,8 +61,14 @@ const AIScanner: React.FC<AIScannerProps> = ({ categories, onScanComplete, onClo
 
       const base64Content = base64Data.split(',')[1];
 
-      // Simple prompt as requested
-      const prompt = 'Analise este cupom fiscal e retorne apenas os dados: valor_total (number), data (ISO string) e estabelecimento em formato JSON puro.';
+      // Prompt mais robusto para garantir extração correta
+      const prompt = `Analise este comprovante fiscal e extraia os seguintes dados em formato JSON:
+      {
+        "valor_total": (numero, use 0 se não encontrar),
+        "data": (string no formato YYYY-MM-DD),
+        "estabelecimento": (nome da loja/empresa)
+      }
+      Retorne APENAS o JSON puro, sem textos adicionais.`;
 
       const result = await model.generateContent([
         { text: prompt },
@@ -70,28 +76,44 @@ const AIScanner: React.FC<AIScannerProps> = ({ categories, onScanComplete, onClo
       ]);
 
       let resultText = result.response.text();
-      // Thorough cleaning of markdown and extra text
+      // Limpeza agressiva para garantir que tenhamos apenas o JSON
       resultText = resultText.replace(/```json/g, '').replace(/```/g, '').trim();
+      const jsonStart = resultText.indexOf('{');
+      const jsonEnd = resultText.lastIndexOf('}') + 1;
+      if (jsonStart !== -1 && jsonEnd !== -1) {
+        resultText = resultText.substring(jsonStart, jsonEnd);
+      }
 
       const parsedData = JSON.parse(resultText);
 
-      // Category Mapping Logic
+      // Lógica de Mapeamento de Categorias Aprimorada
       const establishment = (parsedData.estabelecimento || '').toLowerCase();
-      let suggestedCatId = categories[0].id;
+      // Busca a primeira categoria de despesa como fallback
+      let suggestedCatId = categories.find(c => c.kind === 'despesa')?.id || categories[0]?.id;
+
+      const findCategory = (keywords: string[]) => {
+        return categories.find(c =>
+          c.kind === 'despesa' &&
+          keywords.some(k => c.name.toLowerCase().includes(k))
+        );
+      };
 
       if (establishment.includes('posto') || establishment.includes('branca') || establishment.includes('gasolina') || establishment.includes('shell') || establishment.includes('ipiranga')) {
-        const transportCat = categories.find(c => c.name.toLowerCase().includes('transporte'));
-        if (transportCat) suggestedCatId = transportCat.id;
-      } else if (establishment.includes('mercado') || establishment.includes('super') || establishment.includes('comida') || establishment.includes('restaurante')) {
-        const foodCat = categories.find(c => c.name.toLowerCase().includes('alimentação') || c.name.toLowerCase().includes('mercado'));
-        if (foodCat) suggestedCatId = foodCat.id;
-      } else if (establishment.includes('farmacia') || establishment.includes('drogaria') || establishment.includes('medico')) {
-        const healthCat = categories.find(c => c.name.toLowerCase().includes('saúde'));
-        if (healthCat) suggestedCatId = healthCat.id;
+        const cat = findCategory(['transporte', 'combustível', 'veículo']);
+        if (cat) suggestedCatId = cat.id;
+      } else if (establishment.includes('mercado') || establishment.includes('super') || establishment.includes('comida') || establishment.includes('restaurante') || establishment.includes('iFood') || establishment.includes('padaria')) {
+        const cat = findCategory(['alimentação', 'mercado', 'restaurante']);
+        if (cat) suggestedCatId = cat.id;
+      } else if (establishment.includes('farmacia') || establishment.includes('drogaria') || establishment.includes('medico') || establishment.includes('hospital')) {
+        const cat = findCategory(['saúde', 'farmácia', 'médico']);
+        if (cat) suggestedCatId = cat.id;
+      } else if (establishment.includes('shopping') || establishment.includes('loja') || establishment.includes('magalu') || establishment.includes('amazon')) {
+        const cat = findCategory(['shopping', 'compras', 'lazer']);
+        if (cat) suggestedCatId = cat.id;
       }
 
       onScanComplete({
-        amount: parsedData.valor_total || parsedData.valor || 0,
+        amount: Number(parsedData.valor_total || parsedData.valor || 0),
         description: parsedData.estabelecimento || 'Gasto IA',
         date: parsedData.data ? (parsedData.data.includes('T') ? parsedData.data.split('T')[0] : parsedData.data) : new Date().toISOString().split('T')[0],
         categoryId: suggestedCatId,
