@@ -53,8 +53,16 @@ const App: React.FC = () => {
     updateGoal,
     deleteGoal,
     resetData,
-    deleteAccount
+    deleteAccount,
+    resetFilters,
+    resetDashboardFilters
   } = useStore(session?.user?.id);
+
+  // Resetar filtros ao trocar de página
+  useEffect(() => {
+    resetFilters();
+    resetDashboardFilters();
+  }, [page, resetFilters, resetDashboardFilters]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {

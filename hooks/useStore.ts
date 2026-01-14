@@ -180,7 +180,10 @@ export const useStore = (userId?: string) => {
 
         return {
           ...prev,
-          transactions: transactions || [],
+          transactions: transactions ? transactions.map((t: any) => ({
+            ...t,
+            categoryId: t.category_id
+          })) : [],
           reminders: reminders ? reminders.map((r: any) => ({
             ...r,
             dueDate: r.due_date
@@ -236,16 +239,40 @@ export const useStore = (userId?: string) => {
     setTimeout(() => setIsLoading(false), 400); // Simulate skeleton delay
   }, []);
 
+  const resetFilters = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      filters: { period: '30d', categoryId: 'all', search: '', type: 'all', startDate: '', endDate: '' }
+    }));
+  }, []);
+
+  const resetDashboardFilters = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      dashboardFilters: { period: '30d', startDate: '', endDate: '' }
+    }));
+  }, []);
+
   const addTransaction = useCallback(async (t: Omit<Transaction, 'id'>) => {
     if (userId) {
+      const dbData = {
+        ...t,
+        category_id: t.categoryId,
+        user_id: userId
+      };
+      delete (dbData as any).categoryId;
+
       const { data, error } = await supabase
         .from('transactions')
-        .insert([{ ...t, user_id: userId }])
+        .insert([dbData])
         .select()
         .single();
 
       if (!error && data) {
-        setState(prev => ({ ...prev, transactions: [data, ...prev.transactions] }));
+        const mapped = { ...data, categoryId: data.category_id };
+        setState(prev => ({ ...prev, transactions: [mapped, ...prev.transactions] }));
+      } else if (error) {
+        console.error("Erro ao adicionar transação", error);
       }
     } else {
       const newTransaction = { ...t, id: Math.random().toString(36).substr(2, 9) };
@@ -258,9 +285,15 @@ export const useStore = (userId?: string) => {
 
   const updateTransaction = useCallback(async (id: string, updates: Partial<Transaction>) => {
     if (userId) {
+      const dbUpdates = { ...updates };
+      if (updates.categoryId) {
+        (dbUpdates as any).category_id = updates.categoryId;
+        delete (dbUpdates as any).categoryId;
+      }
+
       const { error } = await supabase
         .from('transactions')
-        .update(updates)
+        .update(dbUpdates)
         .eq('id', id);
 
       if (!error) {
@@ -506,6 +539,8 @@ export const useStore = (userId?: string) => {
     updateGoal,
     deleteGoal,
     resetData,
-    deleteAccount
+    deleteAccount,
+    resetFilters,
+    resetDashboardFilters
   };
 };
