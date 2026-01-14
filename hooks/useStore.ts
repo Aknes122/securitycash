@@ -409,14 +409,21 @@ export const useStore = (userId?: string) => {
     if (userId) {
       const { data, error } = await supabase
         .from('reminders')
-        .insert([{ ...r, user_id: userId, due_date: r.dueDate }])
+        .insert([{
+          title: r.title,
+          amount: r.amount,
+          status: r.status,
+          user_id: userId,
+          due_date: r.dueDate
+        }])
         .select()
         .single();
 
       if (!error && data) {
-        // Map back due_date to dueDate if needed or ensure consistency
         const mapped = { ...data, dueDate: data.due_date };
         setState(prev => ({ ...prev, reminders: [...prev.reminders, mapped] }));
+      } else if (error) {
+        console.error("Erro ao adicionar lembrete", error);
       }
     } else {
       const newReminder = { ...r, id: `rem_${Math.random().toString(36).substr(2, 9)}` };
@@ -426,10 +433,10 @@ export const useStore = (userId?: string) => {
 
   const updateReminder = useCallback(async (id: string, updates: Partial<Reminder>) => {
     if (userId) {
-      const dbUpdates = { ...updates };
+      const dbUpdates: any = { ...updates };
       if (updates.dueDate) {
-        (dbUpdates as any).due_date = updates.dueDate;
-        delete (dbUpdates as any).dueDate;
+        dbUpdates.due_date = updates.dueDate;
+        delete dbUpdates.dueDate;
       }
 
       const { error } = await supabase
