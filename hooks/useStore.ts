@@ -76,6 +76,88 @@ export const useStore = (userId?: string) => {
     if (!userId) return;
     setIsLoading(true);
     try {
+      // 1. Verificar se o usuário já migrou os dados
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('has_migrated')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (!profile || !profile.has_migrated) {
+        const localKey = getKey();
+        const localData = localStorage.getItem(localKey);
+
+        if (localData) {
+          try {
+            const parsed = JSON.parse(localData);
+            console.log("Migrando dados locais para o Supabase (primeira vez)...");
+
+            const migrationPromises = [];
+
+            if (parsed.transactions?.length > 0) {
+              migrationPromises.push(supabase.from('transactions').insert(
+                parsed.transactions.map((t: any) => ({
+                  user_id: userId,
+                  type: t.type,
+                  description: t.description,
+                  amount: t.amount,
+                  date: t.date,
+                  category_id: t.categoryId
+                }))
+              ));
+            }
+
+            if (parsed.reminders?.length > 0) {
+              migrationPromises.push(supabase.from('reminders').insert(
+                parsed.reminders.map((r: any) => ({
+                  user_id: userId,
+                  title: r.title,
+                  due_date: r.dueDate,
+                  amount: r.amount,
+                  status: r.status
+                }))
+              ));
+            }
+
+            if (parsed.goals?.length > 0) {
+              migrationPromises.push(supabase.from('goals').insert(
+                parsed.goals.map((g: any) => ({
+                  user_id: userId,
+                  title: g.title,
+                  target_amount: g.targetAmount,
+                  current_amount: g.currentAmount,
+                  deadline: g.deadline
+                }))
+              ));
+            }
+
+            if (parsed.categories?.length > 0) {
+              migrationPromises.push(supabase.from('categories').upsert(
+                parsed.categories.map((c: any) => ({
+                  id: c.id,
+                  user_id: userId,
+                  name: c.name,
+                  kind: c.kind,
+                  color: c.color
+                }))
+              ));
+            }
+
+            await Promise.all(migrationPromises);
+            console.log("Migração concluída!");
+          } catch (e) {
+            console.error("Erro ao migrar dados locais", e);
+          }
+        }
+
+        // Criar ou atualizar perfil marcando como migrado
+        await supabase.from('profiles').upsert({ id: userId, has_migrated: true });
+
+        // Recarregar os dados agora que foram possivelmente migrados
+        return fetchData();
+      }
+
+      // 2. Buscar dados reais do banco
       const [
         { data: transactions },
         { data: reminders },
@@ -88,101 +170,29 @@ export const useStore = (userId?: string) => {
         supabase.from('categories').select('*')
       ]);
 
-      const hasRemoteData = (transactions?.length || 0) > 0 || (reminders?.length || 0) > 0 || (goals?.length || 0) > 0;
+      setState(prev => {
+        // Se as categorias do banco estiverem vazias MAS o usuário já migrou (passo acima),
+        // significa que ele deletou tudo. Não devemos voltar para SEED_CATEGORIES.
+        // A menos que seja um usuário REALMENTE novo sem nada em lugar nenhum (profile null ou has_migrated false).
+        const finalCategories = (categories && categories.length > 0)
+          ? categories
+          : ((profile?.has_migrated || !localStorage.getItem(getKey())) ? [] : SEED_CATEGORIES);
 
-      // Lógica de migração: Se o banco estiver vazio e houver dados no localStorage, migrar.
-      if (!hasRemoteData) {
-        const localKey = getKey();
-        const localData = localStorage.getItem(localKey);
-        if (localData) {
-          try {
-            const parsed = JSON.parse(localData);
-            const localTransactions = parsed.transactions || [];
-            const localReminders = parsed.reminders || [];
-            const localGoals = parsed.goals || [];
-
-            if (localTransactions.length > 0 || localReminders.length > 0 || localGoals.length > 0) {
-              console.log("Migrando dados locais para o Supabase...");
-
-              const migrationPromises = [];
-
-              if (localTransactions.length > 0) {
-                migrationPromises.push(supabase.from('transactions').insert(
-                  localTransactions.map((t: any) => ({
-                    user_id: userId,
-                    type: t.type,
-                    description: t.description,
-                    amount: t.amount,
-                    date: t.date,
-                    category_id: t.categoryId
-                  }))
-                ));
-              }
-
-              if (localReminders.length > 0) {
-                migrationPromises.push(supabase.from('reminders').insert(
-                  localReminders.map((r: any) => ({
-                    user_id: userId,
-                    title: r.title,
-                    due_date: r.dueDate,
-                    amount: r.amount,
-                    status: r.status
-                  }))
-                ));
-              }
-
-              if (localGoals.length > 0) {
-                migrationPromises.push(supabase.from('goals').insert(
-                  localGoals.map((g: any) => ({
-                    user_id: userId,
-                    title: g.title,
-                    target_amount: g.targetAmount,
-                    current_amount: g.currentAmount,
-                    deadline: g.deadline
-                  }))
-                ));
-              }
-
-              // Adicionar migração de categorias se houver customizações
-              const localCategories = parsed.categories || [];
-              if (localCategories.length > 0) {
-                migrationPromises.push(supabase.from('categories').upsert(
-                  localCategories.map((c: any) => ({
-                    id: c.id,
-                    user_id: userId,
-                    name: c.name,
-                    kind: c.kind,
-                    color: c.color
-                  }))
-                ));
-              }
-
-              await Promise.all(migrationPromises);
-              console.log("Migração concluída!");
-
-              // Recarregar os dados agora que estão no banco
-              return fetchData();
-            }
-          } catch (e) {
-            console.error("Erro na migração automática", e);
-          }
-        }
-      }
-
-      setState(prev => ({
-        ...prev,
-        transactions: transactions || [],
-        reminders: reminders ? reminders.map((r: any) => ({
-          ...r,
-          dueDate: r.due_date
-        })) : [],
-        goals: goals ? goals.map((g: any) => ({
-          ...g,
-          targetAmount: Number(g.target_amount),
-          currentAmount: Number(g.current_amount)
-        })) : [],
-        categories: categories && categories.length > 0 ? categories : SEED_CATEGORIES
-      }));
+        return {
+          ...prev,
+          transactions: transactions || [],
+          reminders: reminders ? reminders.map((r: any) => ({
+            ...r,
+            dueDate: r.due_date
+          })) : [],
+          goals: goals ? goals.map((g: any) => ({
+            ...g,
+            targetAmount: Number(g.target_amount),
+            currentAmount: Number(g.current_amount)
+          })) : [],
+          categories: finalCategories
+        };
+      });
     } catch (e) {
       console.error("Erro ao carregar dados do Supabase", e);
     } finally {
