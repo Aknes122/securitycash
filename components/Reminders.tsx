@@ -99,33 +99,33 @@ const Reminders: React.FC<RemindersProps> = ({ state, onAddReminder, onUpdateRem
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl flex items-center justify-between">
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 rounded-2xl flex items-center justify-between shadow-sm dark:shadow-none text-zinc-900 dark:text-zinc-100">
           <div className="space-y-1">
-            <span className="text-xs text-zinc-500 uppercase font-semibold">Pendentes</span>
+            <span className="text-xs text-zinc-500 dark:text-zinc-400 uppercase font-semibold">Pendentes</span>
             <p className="text-3xl font-bold">{stats.pendingCount}</p>
           </div>
-          <Bell size={32} className="text-zinc-700" />
+          <Bell size={32} className="text-zinc-200 dark:text-zinc-700" />
         </div>
-        <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl flex items-center justify-between">
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 rounded-2xl flex items-center justify-between shadow-sm dark:shadow-none text-zinc-900 dark:text-zinc-100">
           <div className="space-y-1">
             <span className="text-xs text-rose-500 uppercase font-semibold">Atrasados</span>
             <p className="text-3xl font-bold text-rose-500">{stats.overdueCount}</p>
           </div>
-          <AlertCircle size={32} className="text-rose-500/20" />
+          <AlertCircle size={32} className="text-rose-500/10 dark:text-rose-500/20" />
         </div>
       </div>
 
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
-        <div className="divide-y divide-zinc-800">
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-sm dark:shadow-none">
+        <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
           {sortedReminders.length > 0 ? sortedReminders.map(rem => {
             const isOverdue = rem.status === 'pendente' && new Date(rem.dueDate) < new Date();
             const isPaid = rem.status === 'pago';
 
             return (
-              <div key={rem.id} className={`p-4 hover:bg-zinc-800/20 transition-colors flex items-center gap-4 ${isPaid ? 'opacity-60' : ''}`}>
+              <div key={rem.id} className={`p-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/20 transition-colors flex items-center gap-4 ${isPaid ? 'opacity-60' : ''}`}>
                 <button
                   onClick={() => onUpdateReminder(rem.id, { status: isPaid ? 'pendente' : 'pago' })}
-                  className={`flex-shrink-0 transition-colors ${isPaid ? 'text-emerald-500' : 'text-zinc-600 hover:text-zinc-400'}`}
+                  className={`flex-shrink-0 transition-colors ${isPaid ? 'text-emerald-500' : 'text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400'}`}
                 >
                   {isPaid ? <CheckCircle2 size={24} /> : <Circle size={24} />}
                 </button>
@@ -134,12 +134,12 @@ const Reminders: React.FC<RemindersProps> = ({ state, onAddReminder, onUpdateRem
                   <h4 className={`font-semibold text-sm ${isPaid ? 'line-through text-zinc-500' : ''}`}>
                     {rem.title}
                   </h4>
-                  <div className="flex items-center gap-3 text-xs text-zinc-500">
+                  <div className="flex items-center gap-3 text-xs text-zinc-500 dark:text-zinc-400">
                     <span className="flex items-center gap-1">
                       <Calendar size={12} />
                       {formatDate(rem.dueDate)}
                     </span>
-                    <span className="font-medium text-zinc-300">
+                    <span className="font-medium text-zinc-700 dark:text-zinc-300">
                       {formatCurrency(rem.amount)}
                     </span>
                     {isOverdue && (
@@ -153,13 +153,13 @@ const Reminders: React.FC<RemindersProps> = ({ state, onAddReminder, onUpdateRem
                 <div className="flex gap-2">
                   <button
                     onClick={() => openModal(rem)}
-                    className="p-2 text-zinc-600 hover:text-white hover:bg-zinc-800 rounded-lg"
+                    className="p-2 text-zinc-400 dark:text-zinc-600 hover:text-blue-600 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
                   >
                     <Edit2 size={16} />
                   </button>
                   <button
                     onClick={() => onDeleteReminder(rem.id)}
-                    className="p-2 text-zinc-600 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg"
+                    className="p-2 text-zinc-400 dark:text-zinc-600 hover:text-rose-600 dark:hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors"
                   >
                     <Trash2 size={16} />
                   </button>
@@ -168,12 +168,12 @@ const Reminders: React.FC<RemindersProps> = ({ state, onAddReminder, onUpdateRem
             );
           }) : (
             <div className="p-12 text-center space-y-3">
-              <div className="w-12 h-12 bg-zinc-800 rounded-full flex items-center justify-center mx-auto text-zinc-500">
+              <div className="w-12 h-12 bg-zinc-50 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto text-zinc-400 dark:text-zinc-500">
                 <Bell size={24} />
               </div>
               <div>
-                <p className="text-sm font-medium">Nenhum lembrete cadastrado</p>
-                <p className="text-xs text-zinc-600">Adicione suas faturas e boletos para não esquecer.</p>
+                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Nenhum lembrete cadastrado</p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-600">Adicione suas faturas e boletos para não esquecer.</p>
               </div>
             </div>
           )}
@@ -182,8 +182,8 @@ const Reminders: React.FC<RemindersProps> = ({ state, onAddReminder, onUpdateRem
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-2xl p-6 relative shadow-2xl animate-in zoom-in duration-200">
-            <button onClick={() => setIsModalOpen(false)} className="absolute right-4 top-4 text-zinc-500 hover:text-white">
+          <div className="w-full max-w-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 relative shadow-2xl animate-in zoom-in duration-200 text-zinc-900 dark:text-zinc-100">
+            <button onClick={() => setIsModalOpen(false)} className="absolute right-4 top-4 text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-white">
               <X size={20} />
             </button>
             <h3 className="text-xl font-bold mb-6">
@@ -191,11 +191,11 @@ const Reminders: React.FC<RemindersProps> = ({ state, onAddReminder, onUpdateRem
             </h3>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Título do Boleto / Cartão</label>
+                <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Título do Boleto / Cartão</label>
                 <input
                   autoFocus
                   type="text"
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-zinc-900 dark:text-zinc-100"
                   placeholder="Ex: Fatura Nubank, Aluguel..."
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
@@ -204,21 +204,21 @@ const Reminders: React.FC<RemindersProps> = ({ state, onAddReminder, onUpdateRem
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Vencimento</label>
+                  <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Vencimento</label>
                   <input
                     type="date"
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-zinc-900 dark:text-zinc-100"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
                     required
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Valor (R$)</label>
+                  <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Valor (R$)</label>
                   <input
                     type="number"
                     step="0.01"
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-zinc-900 dark:text-zinc-100"
                     placeholder="0,00"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
@@ -227,9 +227,9 @@ const Reminders: React.FC<RemindersProps> = ({ state, onAddReminder, onUpdateRem
                 </div>
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Status</label>
+                <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Status</label>
                 <select
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-zinc-900 dark:text-zinc-100 transition-all"
                   value={status}
                   onChange={(e) => setStatus(e.target.value as any)}
                 >
@@ -238,8 +238,8 @@ const Reminders: React.FC<RemindersProps> = ({ state, onAddReminder, onUpdateRem
                 </select>
               </div>
               <div className="flex gap-3 pt-4">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg font-medium text-sm">Cancelar</button>
-                <button type="submit" className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium text-sm">Salvar</button>
+                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg font-medium text-sm text-zinc-700 dark:text-white transition-colors">Cancelar</button>
+                <button type="submit" className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium text-sm shadow-lg transition-all">Salvar</button>
               </div>
             </form>
           </div>

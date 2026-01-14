@@ -38,9 +38,10 @@ interface DashboardProps {
   onScanIA: () => void;
   onGoToReminders?: () => void;
   onGoToGoals?: () => void;
+  theme: 'light' | 'dark';
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ state, isLoading, onUpdateFilters, onAddRecord, onScanIA, onGoToReminders, onGoToGoals }) => {
+const Dashboard: React.FC<DashboardProps> = ({ state, isLoading, onUpdateFilters, onAddRecord, onScanIA, onGoToReminders, onGoToGoals, theme }) => {
   const filteredTransactions = useMemo(() => {
     // A Dashboard agora usa seu próprio estado de filtros, independente da aba de registros
     const dashboardFilters: Filters = {
@@ -195,10 +196,10 @@ const Dashboard: React.FC<DashboardProps> = ({ state, isLoading, onUpdateFilters
               <YAxis fontSize={9} hide />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#18181b',
+                  backgroundColor: theme === 'dark' ? '#18181b' : '#ffffff',
                   borderRadius: '12px',
-                  border: '1px solid #27272a',
-                  boxShadow: '0 10px 15px -3px rgba(0,0,0,0.3)',
+                  border: theme === 'dark' ? '1px solid #27272a' : '1px solid #e2e8f0',
+                  boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
                   padding: '12px'
                 }}
                 labelStyle={{ color: '#94a3b8', fontWeight: 'bold', fontSize: '11px', marginBottom: '4px' }}
@@ -217,10 +218,10 @@ const Dashboard: React.FC<DashboardProps> = ({ state, isLoading, onUpdateFilters
               <YAxis dataKey="name" type="category" fontSize={9} width={70} axisLine={false} tickLine={false} />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#18181b',
+                  backgroundColor: theme === 'dark' ? '#18181b' : '#ffffff',
                   borderRadius: '12px',
-                  border: '1px solid #27272a',
-                  boxShadow: '0 10px 15px -3px rgba(0,0,0,0.3)',
+                  border: theme === 'dark' ? '1px solid #27272a' : '1px solid #e2e8f0',
+                  boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
                   padding: '12px'
                 }}
                 labelStyle={{ color: '#94a3b8', fontWeight: 'bold', fontSize: '11px', marginBottom: '4px' }}

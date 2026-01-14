@@ -147,6 +147,7 @@ const App: React.FC = () => {
               onScanIA={() => setIsScannerOpen(true)}
               onGoToReminders={() => setPage('reminders')}
               onGoToGoals={() => setPage('goals')}
+              theme={theme}
             />
           )}
           {page === 'records' && (

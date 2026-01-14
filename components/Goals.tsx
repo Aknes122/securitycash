@@ -96,10 +96,10 @@ const Goals: React.FC<GoalsProps> = ({ state, onAddGoal, onUpdateGoal, onDeleteG
                   </p>
                 </div>
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={() => openModal(goal)} className="p-2 text-zinc-500 hover:text-blue-400 hover:bg-zinc-800 rounded-lg">
+                  <button onClick={() => openModal(goal)} className="p-2 text-zinc-400 dark:text-zinc-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors">
                     <Edit2 size={16} />
                   </button>
-                  <button onClick={() => onDeleteGoal(goal.id)} className="p-2 text-zinc-500 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg">
+                  <button onClick={() => onDeleteGoal(goal.id)} className="p-2 text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors">
                     <Trash2 size={16} />
                   </button>
                 </div>
@@ -150,8 +150,8 @@ const Goals: React.FC<GoalsProps> = ({ state, onAddGoal, onUpdateGoal, onDeleteG
             </div>
           );
         }) : (
-          <div className="col-span-full py-24 text-center space-y-4 bg-zinc-100 dark:bg-zinc-900/50 border border-dashed border-zinc-300 dark:border-zinc-800 rounded-3xl">
-            <Target size={48} className="mx-auto text-zinc-300 dark:text-zinc-700" />
+          <div className="col-span-full py-24 text-center space-y-4 bg-zinc-50 dark:bg-zinc-900/50 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-3xl">
+            <Target size={48} className="mx-auto text-zinc-200 dark:text-zinc-700" />
             <div>
               <p className="text-zinc-400 dark:text-zinc-300 font-bold">Nenhuma meta cadastrada</p>
               <p className="text-zinc-500 text-sm">Comece a planejar seus sonhos hoje mesmo.</p>
