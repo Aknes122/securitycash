@@ -143,6 +143,20 @@ export const useStore = (userId?: string) => {
                 ));
               }
 
+              // Adicionar migração de categorias se houver customizações
+              const localCategories = parsed.categories || [];
+              if (localCategories.length > 0) {
+                migrationPromises.push(supabase.from('categories').upsert(
+                  localCategories.map((c: any) => ({
+                    id: c.id,
+                    user_id: userId,
+                    name: c.name,
+                    kind: c.kind,
+                    color: c.color
+                  }))
+                ));
+              }
+
               await Promise.all(migrationPromises);
               console.log("Migração concluída!");
 
@@ -315,14 +329,27 @@ export const useStore = (userId?: string) => {
 
   const updateCategory = useCallback(async (id: string, updates: Partial<Category>) => {
     if (userId) {
-      const { error } = await supabase.from('categories').update(updates).eq('id', id);
-      if (!error) {
-        setState(prev => ({ ...prev, categories: prev.categories.map(c => c.id === id ? { ...c, ...updates } : c) }));
+      // Usar upsert para garantir que se for uma categoria padrão editada, ela seja salva vinculada ao usuário
+      const category = state.categories.find(c => c.id === id);
+      if (category) {
+        const { error } = await supabase
+          .from('categories')
+          .upsert({
+            ...category,
+            ...updates,
+            user_id: userId
+          });
+
+        if (!error) {
+          setState(prev => ({ ...prev, categories: prev.categories.map(c => c.id === id ? { ...c, ...updates } : c) }));
+        } else {
+          console.error("Erro ao atualizar categoria no Supabase", error);
+        }
       }
     } else {
       setState(prev => ({ ...prev, categories: prev.categories.map(c => c.id === id ? { ...c, ...updates } : c) }));
     }
-  }, [userId]);
+  }, [userId, state.categories]);
 
   const deleteCategory = useCallback(async (id: string) => {
     if (userId) {
