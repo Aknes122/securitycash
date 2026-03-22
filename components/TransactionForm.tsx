@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import { Category, Transaction, TransactionType, Goal } from '../types';
 import { generateCognitiveImpact, parseNaturalLanguageTransaction } from '../utils/aiHelpers';
-import { BrainCircuit, Loader2, Zap, FileText, Mic } from 'lucide-react';
+import { BrainCircuit, Loader2, Zap, FileText, Mic, ArrowRight, CheckCircle, Trash2, Plus, TrendingDown, TrendingUp } from 'lucide-react';
+import { formatCurrency } from '../utils/formatters';
 
 interface TransactionFormProps {
   categories: Category[];
@@ -28,6 +29,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ categories, initialDa
   // Smart Input (AI 2.0)
   const [smartMode, setSmartMode] = useState(false);
   const [smartText, setSmartText] = useState('');
+  const [parsedItems, setParsedItems] = useState<Array<{amount: number; description: string; categoryId: string; type: 'despesa'|'entrada'; date: string; saved?: boolean}>>([]);
   
   // Web Speech API
   const [isListening, setIsListening] = useState(false);
@@ -111,18 +113,25 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ categories, initialDa
   const handleSmartInput = async () => {
     if (!smartText.trim()) return;
     setIsAnalyzing(true);
+    setParsedItems([]);
     try {
       const today = new Date().toISOString().split('T')[0];
       const items = await parseNaturalLanguageTransaction(smartText, categories, today);
       if (items && items.length > 0) {
-        const t = items[0]; // Pega a primeira extraída
-        setAmount(t.amount.toString());
-        setDescription(t.description);
-        setCategoryId(t.categoryId || '');
-        setType(t.type);
-        setDate(t.date || today);
-        setSmartMode(false); // Retorna ao form preenchido!
-        setSmartText('');
+        if (items.length === 1) {
+          // Apenas 1 item: preenche form direto (comportamento antigo)
+          const t = items[0];
+          setAmount(t.amount.toString());
+          setDescription(t.description);
+          setCategoryId(t.categoryId || '');
+          setType(t.type);
+          setDate(t.date || today);
+          setSmartMode(false);
+          setSmartText('');
+        } else {
+          // Múltiplos itens: exibe painel de revisão
+          setParsedItems(items.map(i => ({ ...i, saved: false })));
+        }
       }
     } catch (e) {
       console.error(e);
@@ -130,6 +139,37 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ categories, initialDa
     } finally {
       setIsAnalyzing(false);
     }
+  };
+
+  const handleSaveItem = (idx: number) => {
+    const item = parsedItems[idx];
+    onSubmit({
+      type: item.type,
+      date: item.date,
+      categoryId: item.categoryId,
+      description: item.description,
+      amount: item.amount
+    });
+    setParsedItems(prev => prev.map((p, i) => i === idx ? { ...p, saved: true } : p));
+  };
+
+  const handleSaveAllItems = () => {
+    parsedItems.filter(i => !i.saved).forEach((item) => {
+      onSubmit({
+        type: item.type,
+        date: item.date,
+        categoryId: item.categoryId,
+        description: item.description,
+        amount: item.amount
+      });
+    });
+    setParsedItems([]);
+    setSmartText('');
+    setSmartMode(false);
+  };
+
+  const handleRemoveItem = (idx: number) => {
+    setParsedItems(prev => prev.filter((_, i) => i !== idx));
   };
 
   return (
@@ -189,6 +229,88 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ categories, initialDa
             >
               {isAnalyzing ? <><Loader2 size={16} className="animate-spin" /> Mapeando dados...</> : <><Zap size={16} className="text-amber-400" /> Auto-Preencher</>}
             </button>
+
+            {/* Painel de Revisão de Múltiplos Lançamentos */}
+            {parsedItems.length > 0 && (
+              <div className="mt-5 space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="flex items-center justify-between">
+                  <h5 className="text-xs font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-300 flex items-center gap-2">
+                    <CheckCircle size={13} /> {parsedItems.length} Lançamentos Detectados
+                  </h5>
+                  <button
+                    type="button"
+                    onClick={handleSaveAllItems}
+                    disabled={parsedItems.every(i => i.saved)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-white text-[11px] font-black rounded-lg transition-all disabled:opacity-40"
+                  >
+                    <Plus size={13} /> Salvar Todos
+                  </button>
+                </div>
+
+                {parsedItems.map((item, idx) => {
+                  const cat = categories.find(c => c.id === item.categoryId);
+                  return (
+                    <div key={idx} className={`flex items-center justify-between gap-3 px-4 py-3 border rounded-xl transition-all ${
+                      item.saved
+                        ? 'border-emerald-500/30 bg-emerald-500/5 opacity-60'
+                        : 'border-indigo-200 dark:border-indigo-500/30 bg-white dark:bg-zinc-900'
+                    }`}>
+                      {/* Badge Tipo */}
+                      <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${
+                        item.type === 'entrada' ? 'bg-emerald-100 dark:bg-emerald-500/20' : 'bg-rose-100 dark:bg-rose-500/20'
+                      }`}>
+                        {item.type === 'entrada'
+                          ? <TrendingUp size={16} className="text-emerald-600 dark:text-emerald-400" />
+                          : <TrendingDown size={16} className="text-rose-600 dark:text-rose-400" />}
+                      </div>
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-zinc-900 dark:text-white truncate">{item.description}</p>
+                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400">{cat?.name ?? '—'} · {item.date}</p>
+                      </div>
+
+                      {/* Valor */}
+                      <span className={`font-black text-sm tabular-nums flex-shrink-0 ${
+                        item.type === 'entrada' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                      }`}>
+                        {item.type === 'entrada' ? '+' : '-'}{formatCurrency(item.amount)}
+                      </span>
+
+                      {/* Ações */}
+                      {item.saved ? (
+                        <CheckCircle size={18} className="text-emerald-500 flex-shrink-0" />
+                      ) : (
+                        <div className="flex gap-1 flex-shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleSaveItem(idx)}
+                            className="p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors"
+                            title="Salvar este lançamento"
+                          >
+                            <ArrowRight size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveItem(idx)}
+                            className="p-1.5 bg-zinc-200 dark:bg-zinc-700 hover:bg-rose-100 dark:hover:bg-rose-500/20 text-zinc-500 hover:text-rose-500 rounded-lg transition-colors"
+                            title="Descartar"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {parsedItems.some(i => !i.saved) && (
+                  <p className="text-[10px] text-indigo-400/70 dark:text-indigo-500/60 text-center font-medium">
+                    Clique em → para salvar individualmente ou use "Salvar Todos"
+                  </p>
+                )}
+              </div>
+            )}
           </div>
           <button type="button" onClick={onCancel} className="w-full py-2 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 text-sm font-bold">Cancelar Lançamento</button>
         </div>

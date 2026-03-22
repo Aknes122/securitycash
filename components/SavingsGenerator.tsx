@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Transaction, Category, Negotiation } from '../types';
 import { continueNegotiationChat } from '../utils/aiHelpers';
 import { useStore } from '../hooks/useStore';
-import { Lightbulb, Copy, CheckCircle2, Loader2, MessageSquareText, Zap, Send, PhoneCall, ArrowLeft, Trash2 } from 'lucide-react';
+import { Copy, CheckCircle2, Loader2, Zap, Send, PhoneCall, ArrowLeft, Trash2, CheckSquare, XCircle } from 'lucide-react';
 import { formatCurrency } from '../utils/formatters';
 
 interface SavingsGeneratorProps {
@@ -26,7 +26,7 @@ const SavingsGenerator: React.FC<SavingsGeneratorProps> = ({ transactions, categ
   const [loading, setLoading] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   
-  const [pendingNeg, setPendingNeg] = useState<{name: string, openingScript: string} | null>(null);
+  const [pendingNeg, setPendingNeg] = useState<{name: string, openingScript: string, status: 'active'|'won'|'lost'} | null>(null);
 
   const activeNeg = activeNegId ? negotiations.find(n => n.id === activeNegId) : null;
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -45,11 +45,14 @@ const SavingsGenerator: React.FC<SavingsGeneratorProps> = ({ transactions, categ
       if (sorted[0] && sorted[0].serviceName === pendingNeg.name && sorted[0].messages.length === 0) {
         setActiveNegId(sorted[0].id);
         addNegotiationMessage(sorted[0].id, 'ai', pendingNeg.openingScript);
+        if (pendingNeg.status !== 'active') {
+          updateNegotiationStatus(sorted[0].id, pendingNeg.status);
+        }
         setPendingNeg(null);
         setLoading(false);
       }
     }
-  }, [negotiations, pendingNeg, addNegotiationMessage]);
+  }, [negotiations, pendingNeg, addNegotiationMessage, updateNegotiationStatus]);
 
   const handleStartNegotiation = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,8 +64,8 @@ const SavingsGenerator: React.FC<SavingsGeneratorProps> = ({ transactions, categ
 
     setLoading(true);
     try {
-      // 1. Gera a abertura (sem passar id pro state local ainda pq precisamos rodar síncrono para UX)
-      const openingScript = await continueNegotiationChat(expenseName, parseFloat(currentAmount), parseFloat(targetAmount), [], "");
+      // 1. Gera a abertura
+      const aiResponse = await continueNegotiationChat(expenseName, parseFloat(currentAmount), parseFloat(targetAmount), [], "");
       
       // 2. Registra na Store
       addNegotiation({
@@ -73,7 +76,7 @@ const SavingsGenerator: React.FC<SavingsGeneratorProps> = ({ transactions, categ
       });
 
       // 3. Define a Flag de Espera para o UseEffect agir!
-      setPendingNeg({ name: expenseName, openingScript });
+      setPendingNeg({ name: expenseName, openingScript: aiResponse.script, status: aiResponse.status });
       setExpenseName('');
       setCurrentAmount('');
       setTargetAmount('');
@@ -98,7 +101,7 @@ const SavingsGenerator: React.FC<SavingsGeneratorProps> = ({ transactions, categ
 
       // Pede pra IA continuar
       const updatedHistory = [...activeNeg.messages, { id: 'temp', role: 'user' as const, content: userText, createdAt: '' }];
-      const aiReply = await continueNegotiationChat(
+      const aiResponse = await continueNegotiationChat(
         activeNeg.serviceName, 
         activeNeg.currentAmount, 
         activeNeg.targetAmount, 
@@ -106,8 +109,12 @@ const SavingsGenerator: React.FC<SavingsGeneratorProps> = ({ transactions, categ
         userText
       );
 
-      // Salva Resposta da IA
-      addNegotiationMessage(activeNeg.id, 'ai', aiReply);
+      // Salva Resposta da IA e verifica Vitória (nunca derrota automática)
+      addNegotiationMessage(activeNeg.id, 'ai', aiResponse.script);
+      if (aiResponse.status === 'won') {
+        updateNegotiationStatus(activeNeg.id, 'won');
+      }
+      // status 'lost' da IA é ignorado — apenas o usuário pode decidir isso
     } catch (err) {
       console.error(err);
     } finally {
@@ -126,6 +133,22 @@ const SavingsGenerator: React.FC<SavingsGeneratorProps> = ({ transactions, categ
     if(confirm("Deseja apagar este histórico de negociação?")) {
       deleteNegotiation(id);
       if(activeNegId === id) setActiveNegId(null);
+    }
+  };
+
+  const handleManualWin = () => {
+    if (!activeNegId) return;
+    if(confirm("Deseja encerrar a negociação aceitando a última proposta recebida?")) {
+      updateNegotiationStatus(activeNegId, 'won');
+      addNegotiationMessage(activeNegId, 'system', 'Você encerrou a negociação manualmente considerando a oferta satisfatória.');
+    }
+  };
+
+  const handleManualLoss = () => {
+    if (!activeNegId) return;
+    if(confirm("Deseja encerrar marcando esta negociação como perdida?")) {
+      updateNegotiationStatus(activeNegId, 'lost');
+      addNegotiationMessage(activeNegId, 'system', 'Negociação encerrada. O desconto não foi conquistado desta vez.');
     }
   };
 
@@ -184,13 +207,19 @@ const SavingsGenerator: React.FC<SavingsGeneratorProps> = ({ transactions, categ
             ) : (
               <div className="space-y-3 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
                 {[...negotiations].reverse().map(n => (
-                  <div key={n.id} onClick={() => setActiveNegId(n.id)} className="group bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl p-4 cursor-pointer transition-all flex items-center justify-between">
+                  <div key={n.id} onClick={() => setActiveNegId(n.id)} className={`group hover:bg-white/10 border rounded-2xl p-4 cursor-pointer transition-all flex items-center justify-between ${n.status === 'won' ? 'bg-emerald-900/20 border-emerald-500/30' : n.status === 'lost' ? 'bg-rose-900/20 border-rose-500/30' : 'bg-white/5 border-white/10'}`}>
                     <div>
-                      <h4 className="font-bold text-white tracking-wide">{n.serviceName}</h4>
-                      <p className="text-xs text-indigo-300 font-medium">De {formatCurrency(n.currentAmount)} para <span className="text-emerald-400">{formatCurrency(n.targetAmount)}</span></p>
+                      <h4 className="font-bold text-white tracking-wide flex items-center gap-2">
+                        {n.serviceName}
+                        {n.status === 'won' && <span className="px-2 py-0.5 rounded text-[9px] uppercase tracking-widest bg-emerald-500 text-white shadow-sm">Vitória</span>}
+                        {n.status === 'lost' && <span className="px-2 py-0.5 rounded text-[9px] uppercase tracking-widest bg-rose-500 text-white shadow-sm">Perdida</span>}
+                      </h4>
+                      <p className={`text-xs font-medium mt-0.5 ${n.status === 'won' ? 'text-emerald-300' : 'text-indigo-300'}`}>
+                        De {formatCurrency(n.currentAmount)} para <span className={n.status === 'won' ? 'text-white font-black' : 'text-emerald-400 font-bold'}>{formatCurrency(n.targetAmount)}</span>
+                      </p>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-[10px] px-2 py-1 rounded-md bg-indigo-500/20 text-indigo-300 font-bold uppercase">{n.messages.length} envios</span>
+                      <span className={`text-[10px] px-2 py-1 rounded-md font-bold uppercase ${n.status === 'won' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-indigo-500/20 text-indigo-300'}`}>{n.messages.length} msgs</span>
                       <button onClick={(e) => handleDelete(n.id, e)} className="text-rose-400/50 hover:text-rose-400 transition-colors p-2">
                         <Trash2 size={16} />
                       </button>
@@ -206,20 +235,38 @@ const SavingsGenerator: React.FC<SavingsGeneratorProps> = ({ transactions, categ
       {/* TELA 2: ARENA DE CHAT */}
       {activeNegId && activeNeg && (
         <div className="flex-1 flex flex-col bg-black/20 border border-white/5 rounded-3xl overflow-hidden relative z-10">
-          <div className="bg-indigo-900/50 p-4 border-b border-white/5 flex justify-between items-center">
-            <div className="text-sm font-bold text-indigo-100 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
-              Alvo tático: Reduzir {activeNeg.serviceName} para {formatCurrency(activeNeg.targetAmount)}
+          {/* HEADER DO CHAT com indicador de status */}
+          <div className={`p-4 border-b border-white/5 flex justify-between items-center ${
+            activeNeg.status === 'won' ? 'bg-emerald-900/60' : 
+            activeNeg.status === 'lost' ? 'bg-rose-900/60' : 'bg-indigo-900/50'
+          }`}>
+            <div className={`text-sm font-bold flex items-center gap-2 ${
+              activeNeg.status === 'won' ? 'text-emerald-100' : 
+              activeNeg.status === 'lost' ? 'text-rose-200' : 'text-indigo-100'
+            }`}>
+              <span className={`w-2 h-2 rounded-full animate-pulse ${
+                activeNeg.status === 'won' ? 'bg-emerald-400' : 
+                activeNeg.status === 'lost' ? 'bg-rose-400' : 'bg-amber-400'
+              }`}></span>
+              {activeNeg.status === 'won' ? 'Objetivo Concluído 🎉' : 
+               activeNeg.status === 'lost' ? 'Negociação Encerrada' :
+               `Barganhando: ${activeNeg.serviceName} → ${formatCurrency(activeNeg.targetAmount)}`}
             </div>
           </div>
           
           <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar scroll-smooth">
             {activeNeg.messages.map((msg, idx) => (
-              <div key={msg.id} className={`flex max-w-[85%] ${msg.role === 'ai' ? 'mr-auto flex-col items-start' : 'ml-auto flex-col items-end'}`}>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-400/50 mb-1 ml-1">
-                  {msg.role === 'ai' ? 'Instrução do Consultor' : 'Resposta do Atendente'}
-                </span>
-                <div className={`p-4 rounded-2xl relative group ${msg.role === 'ai' ? 'bg-indigo-600 text-white rounded-tl-sm' : 'bg-slate-700 text-slate-200 rounded-tr-sm'}`}>
+              <div key={msg.id} className={`flex max-w-[85%] ${msg.role === 'ai' || msg.role === 'system' ? 'mr-auto flex-col items-start' : 'ml-auto flex-col items-end'}`}>
+                {msg.role !== 'system' && (
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-400/50 mb-1 ml-1">
+                    {msg.role === 'ai' ? 'Instrução do Consultor' : 'Resposta do Atendente'}
+                  </span>
+                )}
+                <div className={`p-4 rounded-2xl relative group ${
+                  msg.role === 'ai' ? 'bg-indigo-600 text-white rounded-tl-sm' : 
+                  msg.role === 'system' ? 'bg-black/30 text-indigo-300 border border-indigo-500/30 w-full text-center py-2' :
+                  'bg-slate-700 text-slate-200 rounded-tr-sm'
+                }`}>
                   {msg.role === 'ai' && (
                     <button onClick={() => handleCopy(msg.content, idx)} className="absolute top-2 right-2 p-1.5 bg-black/20 hover:bg-black/40 rounded-lg text-white opacity-0 group-hover:opacity-100 transition-all">
                       {copiedIndex === idx ? <CheckCircle2 size={14} className="text-emerald-400" /> : <Copy size={14} />}
@@ -241,21 +288,41 @@ const SavingsGenerator: React.FC<SavingsGeneratorProps> = ({ transactions, categ
             <div ref={chatEndRef} />
           </div>
 
-          <form onSubmit={handleSendRebuttal} className="p-4 bg-indigo-950/50 border-t border-white/5">
+          {/* BOTÕES DE CONTROLE — faixa acima do input, visível enquanto ativa */}
+          {activeNeg.status === 'active' && activeNeg.messages.length > 0 && (
+            <div className="px-4 py-2 border-t border-white/5 bg-slate-900/50 flex gap-2 justify-end">
+              <button
+                type="button"
+                onClick={handleManualWin}
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-full shadow-md transition-all hover:scale-105 whitespace-nowrap"
+              >
+                <CheckSquare size={13} /> Acordo Aceito
+              </button>
+              <button
+                type="button"
+                onClick={handleManualLoss}
+                className="flex items-center gap-2 px-4 py-2 bg-rose-900/80 hover:bg-rose-800 text-rose-300 text-xs font-bold rounded-full shadow-md transition-all hover:scale-105 whitespace-nowrap border border-rose-700/50"
+              >
+                <XCircle size={13} /> Negociação Perdida
+              </button>
+            </div>
+          )}
+
+          <form onSubmit={handleSendRebuttal} className={`p-4 border-t border-white/5 ${activeNeg.status === 'won' ? 'bg-emerald-950/50' : 'bg-indigo-950/50'}`}>
             <div className="relative flex items-center">
               <input
                 type="text"
                 required
                 value={rebuttal}
                 onChange={e => setRebuttal(e.target.value)}
-                placeholder="O que o atendente respondeu agora? Digite aqui..."
-                disabled={loading}
+                placeholder={activeNeg.status === 'won' ? "Chat fechado. Vitória alcançada!" : "O que o atendente respondeu agora? Digite aqui..."}
+                disabled={loading || activeNeg.status !== 'active'}
                 className="w-full bg-black/30 border border-white/10 rounded-full pl-5 pr-14 py-4 text-sm text-white focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
               />
               <button 
                 type="submit" 
-                disabled={loading || !rebuttal.trim()} 
-                className="absolute right-2 p-2.5 bg-indigo-500 hover:bg-indigo-400 text-white rounded-full transition-transform disabled:opacity-50 disabled:scale-95"
+                disabled={loading || !rebuttal.trim() || activeNeg.status !== 'active'} 
+                className={`absolute right-2 p-2.5 rounded-full transition-transform disabled:opacity-50 disabled:scale-95 text-white ${activeNeg.status !== 'active' ? 'bg-zinc-600' : 'bg-indigo-500 hover:bg-indigo-400'}`}
               >
                 <Send size={18} />
               </button>

@@ -204,20 +204,34 @@ export const continueNegotiationChat = async (
   targetAmount: number,
   history: NegotiationMessage[],
   userRebuttal: string
-): Promise<string> => {
+): Promise<{ script: string, status: 'active' | 'won' | 'lost' }> => {
   try {
     const genAI = getGenAI();
     const model = genAI.getGenerativeModel({ 
       model: "gemini-2.0-flash",
-      systemInstruction: `Você é uma IA de persuasão e negociação inspirada em Chris Voss.
-O usuário quer negociar um serviço de ${serviceName}.
-Ele paga R$ ${currentAmount} e deseja pagar R$ ${targetAmount} (ou cancelar se muito caro).
-Seja O SCRIPT que o usuário vai copiar e colar (ou ler no telefone) para o vendedor.
-Regras da sua fala:
-1. Comece usando Empatia Tática ou um Rótulo (ex: "Parece que você está preso nas regras da empresa...").
-2. Faça uso tático da Ancoragem e de perguntas "Como" ou "O Quê" (ex: "Como eu supostamente faria para pagar isso se o concorrente me ofereceu por X?").
-3. Nunca entregue os pontos de primeira. Seja polido, assertivo e cause uma dissonância amigável.
-4. Responda DIRETAMENTE com a frase que ele deve dizer (sem aspas, sem introduções de 'Diga isso:').`
+      systemInstruction: `Você é um Consultor de Negociação de elite, treinado nas técnicas de Chris Voss (ex-negociador chefe do FBI).
+O usuário quer negociar com empresa que fornece "${serviceName}".
+Elê paga atualmente R$ ${currentAmount}/mês e quer chegar a R$ ${targetAmount}/mês.
+
+Sua missão: gerar um SCRIPT exato para o usuário FALAR ou COPIAR agora.
+
+Táticas que você domina:
+- Empatia Tática: Comece sempre com rótulos emocionais ("Parece que...") para criar rapport
+- Ancoragem firme: Repita o valor alvo com calma. Nunca ceda ao primeiro contra-valor
+- Perguntas calibradas "Como" e "O Quê" que forçam o atendente a trabalhar por você
+- CARTA NA MANGA — Améaca de Cancelamento (use com parcimônia): Só use esta tática se o atendente já recusou firmemente 2 ou mais vezes E a conversa parece travada. Ameace cancelar de forma calma e definitiva. Não use isso na abertura nem repita mais de uma vez — perde o efeito. É uma carta que só funciona quando bem cronometrada.
+- Silêncio e repetição: Repetir o valor alvo sem justificar também é uma tática válida.
+
+Regras de status:
+- Sempre retorne status: "active" a menos que o atendente CONFIRME EXPLICITAMENTE o valor alvo (R$ ${targetAmount} ou menor)
+- Se confirmado o valor alvo: retorne status: "won" com uma frase de agradecimento gentil
+- NUNCA retorne status: "lost". Apenas o usuário pode encerrar uma negociação como perdida.
+
+Retorne APENAS este JSON:
+{
+  "script": "a frase exata para falar agora, direto ao ponto",
+  "status": "active" | "won"
+}`
     });
 
     const contents: Array<{ role: 'user' | 'model', parts: [{ text: string }] }> = [];
@@ -241,10 +255,17 @@ Regras da sua fala:
 
     contents.push({ role: 'user', parts: [{ text: nextPrompt }] });
 
-    const result = await model.generateContent({ contents });
-    return result.response.text().trim();
+    const result = await model.generateContent({ 
+      contents,
+      generationConfig: { responseMimeType: "application/json" }
+    });
+    
+    return JSON.parse(result.response.text());
   } catch (err) {
     console.error("Erro no chat de negociação:", err);
-    return "Lamento, perdi o sinal tático. Diga a ele: 'Como eu posso resolver isso se o preço continua inviável para mim?'";
+    return {
+      script: "Lamento, perdi o sinal tático. Diga a ele: 'Como eu posso resolver isso se o preço continua inviável para mim?'",
+      status: 'active' as const
+    };
   }
 };
