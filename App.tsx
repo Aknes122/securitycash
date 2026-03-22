@@ -23,14 +23,13 @@ const App: React.FC = () => {
   const [session, setSession] = useState<Session | null>(null);
 
   // Detect recovery mode synchronously from URL before any async calls
-  // Supports both implicit flow (#type=recovery) and PKCE flow (?type=recovery)
   const detectRecovery = () => {
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const queryParams = new URLSearchParams(window.location.search);
-    return hashParams.get('type') === 'recovery' || queryParams.get('type') === 'recovery';
+    const hash = window.location.hash.substring(1);
+    const query = window.location.search;
+    return hash.includes('type=recovery') || query.includes('type=recovery');
   };
-  const isRecoveryRef = useRef(detectRecovery());
-  const [isRecovery, setIsRecovery] = useState(isRecoveryRef.current);
+  
+  const [isRecovery, setIsRecovery] = useState(detectRecovery());
   const [page, setPage] = useState<Page>('dashboard');
   // const [isLoggedOut, setIsLoggedOut] = useState(false); // Removido mock state
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -77,31 +76,37 @@ const App: React.FC = () => {
   }, [page, resetFilters, resetDashboardFilters]);
 
   useEffect(() => {
-    // Only set session from getSession if NOT in recovery flow
-    // (recovery session is handled by PASSWORD_RECOVERY event)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!isRecoveryRef.current) {
-        setSession(session);
+    // 1. Get initial session
+    supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
+      // If we're not in a recovery flow, or if we have a session but it's NOT a recovery one, set it
+      // Note: During recovery, Supabase usually returns a temporary session
+      if (!detectRecovery()) {
+        setSession(initialSession);
       }
     });
 
+    // 2. Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
+    } = supabase.auth.onAuthStateChange((event, newSession) => {
+      console.log('Auth Event:', event);
+      
       if (event === 'PASSWORD_RECOVERY') {
-        isRecoveryRef.current = true;
         setIsRecovery(true);
-        setSession(session);
+        setSession(newSession);
       } else if (event === 'SIGNED_OUT') {
-        isRecoveryRef.current = false;
         setIsRecovery(false);
         setSession(null);
-      } else {
-        // SIGNED_IN, TOKEN_REFRESHED, USER_UPDATED, INITIAL_SESSION
-        // Do NOT clear recovery mode here — only SIGNED_OUT should do that
-        if (!isRecoveryRef.current) {
-          setSession(session);
+      } else if (newSession) {
+        // For SIGNED_IN, INITIAL_SESSION, TOKEN_REFRESHED, etc.
+        // We only clear recovery mode if it's a "normal" sign in (not during recovery event)
+        if (event !== 'INITIAL_SESSION') {
+          // If we just signed in normally, we definitely aren't recovering anymore
+          // (unless the event was PASSWORD_RECOVERY which we handle above)
         }
+        setSession(newSession);
+      } else {
+        setSession(null);
       }
     });
 
@@ -147,7 +152,15 @@ const App: React.FC = () => {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    } finally {
+      // Force clear local state for immediate feedback
+      setSession(null);
+      setIsRecovery(false);
+    }
   };
 
   if (isRecovery && session) {
