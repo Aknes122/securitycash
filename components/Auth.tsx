@@ -27,7 +27,15 @@ const Auth = () => {
                 if (error) throw error;
             }
         } catch (error: any) {
-            setError(error.message);
+            let msg = error.message;
+            if (msg === 'Invalid login credentials') {
+                msg = 'E-mail ou senha incorretos.';
+            } else if (msg === 'User already registered') {
+                msg = 'Este e-mail já está em uso.';
+            } else if (msg.includes('at least 6 characters')) {
+                msg = 'A senha deve ter pelo menos 6 caracteres.';
+            }
+            setError(msg);
         } finally {
             setLoading(false);
         }
@@ -45,7 +53,11 @@ const Auth = () => {
             if (error) throw error;
             setView('forgot-success');
         } catch (error: any) {
-            setError(error.message);
+            let msg = error.message;
+            if (msg.includes('not found')) {
+                msg = 'Não encontramos nenhum usuário com este e-mail.';
+            }
+            setError(msg);
         } finally {
             setLoading(false);
         }

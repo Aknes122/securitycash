@@ -34,7 +34,13 @@ const ResetPassword: React.FC<ResetPasswordProps> = ({ onDone }) => {
       if (error) throw error;
       setSuccess(true);
     } catch (err: any) {
-      setError(err.message);
+      let msg = err.message;
+      if (msg === 'New password should be different from the old password.') {
+        msg = 'A nova senha deve ser diferente da senha antiga.';
+      } else if (msg.includes('at least 6 characters')) {
+        msg = 'A senha deve ter pelo menos 6 caracteres.';
+      }
+      setError(msg);
     } finally {
       setLoading(false);
     }
