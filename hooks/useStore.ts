@@ -386,7 +386,29 @@ export const useStore = (userId?: string) => {
         if (!error) {
           setState(prev => ({ ...prev, categories: prev.categories.map(c => c.id === id ? { ...c, ...updates } : c) }));
         } else {
-          console.error("Erro ao atualizar categoria no Supabase", error);
+          console.warn("Supabase bloqueou o update (possível erro de ID global). Clonando a categoria...");
+          const newId = `cat_${Math.random().toString(36).substr(2, 9)}`;
+          const newCategoryData = { ...category, ...updates, id: newId, user_id: userId };
+          
+          const { data: newCat, error: insertErr } = await supabase
+            .from('categories')
+            .insert([newCategoryData])
+            .select()
+            .single();
+
+          if (!insertErr && newCat) {
+             // Redirecionar todas as transações para a nova categoria no banco de dados automaticamente
+             await supabase.from('transactions').update({ category_id: newId }).eq('category_id', id).eq('user_id', userId);
+             
+             // Atualizar o estado local imediatamente
+             setState(prev => ({ 
+               ...prev, 
+               categories: prev.categories.map(c => c.id === id ? newCat : c),
+               transactions: prev.transactions.map(t => t.categoryId === id ? { ...t, categoryId: newId } : t)
+             }));
+          } else {
+            console.error("Erro ao tentar clonar categoria no Supabase", insertErr);
+          }
         }
       }
     } else {
