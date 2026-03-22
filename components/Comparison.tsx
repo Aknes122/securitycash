@@ -96,16 +96,16 @@ const Comparison: React.FC<ComparisonProps> = ({ state }) => {
     const isGood = inverse ? !isIncrease : isIncrease;
 
     return (
-      <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-3xl space-y-3 shadow-sm">
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 rounded-3xl space-y-3 shadow-sm">
         <h4 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{title}</h4>
         <div className="flex items-end justify-between gap-2">
-          <p className="text-2xl font-bold tracking-tight">{formatCurrency(current)}</p>
-          <div className={`flex items-center gap-1 text-xs font-bold ${diff === 0 ? 'text-zinc-500' : (isGood ? 'text-emerald-500' : 'text-rose-500')}`}>
+          <p className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">{formatCurrency(current)}</p>
+          <div className={`flex items-center gap-1 text-xs font-bold ${diff === 0 ? 'text-zinc-400' : (isGood ? 'text-emerald-500' : 'text-rose-500')}`}>
             {diff > 0 ? <TrendingUp size={14} /> : diff < 0 ? <TrendingDown size={14} /> : <Minus size={14} />}
             {Math.abs(diff).toFixed(1)}%
           </div>
         </div>
-        <p className="text-[10px] text-zinc-500 font-medium">Anterior: {formatCurrency(prev)}</p>
+        <p className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium">Anterior: {formatCurrency(prev)}</p>
       </div>
     );
   };
@@ -113,8 +113,8 @@ const Comparison: React.FC<ComparisonProps> = ({ state }) => {
   return (
     <div className="space-y-8 pb-12">
       <header>
-        <h2 className="text-2xl font-bold capitalize">Comparativo Mensal</h2>
-        <p className="text-zinc-500 text-sm">{comparisonData.currentMonthName} vs {comparisonData.prevMonthName}</p>
+        <h2 className="text-2xl font-bold capitalize text-zinc-900 dark:text-white">Comparativo Mensal</h2>
+        <p className="text-zinc-500 dark:text-zinc-400 text-sm">{comparisonData.currentMonthName} vs {comparisonData.prevMonthName}</p>
       </header>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -124,41 +124,41 @@ const Comparison: React.FC<ComparisonProps> = ({ state }) => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-zinc-900 border border-zinc-800 p-6 rounded-3xl space-y-6 shadow-sm">
-          <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Gastos por Categoria</h3>
+        <div className="lg:col-span-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 rounded-3xl space-y-6 shadow-sm">
+          <h3 className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Gastos por Categoria</h3>
           <div className="h-[350px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={comparisonData.catData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e4e4e7" className="dark:[stroke:#27272a]" vertical={false} />
                 <XAxis dataKey="name" stroke="#71717a" fontSize={10} tickLine={false} axisLine={false} />
                 <YAxis stroke="#71717a" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => `R$${val}`} />
                 <Tooltip 
-                  cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                  contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '12px', padding: '12px' }}
-                  labelStyle={{ color: '#94a3b8', fontWeight: 'bold', fontSize: '11px', marginBottom: '4px' }}
-                  itemStyle={{ color: '#fafafa', fontSize: '12px', fontWeight: 'bold' }}
+                  cursor={{ fill: 'rgba(0,0,0,0.04)' }}
+                  contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e4e4e7', borderRadius: '12px', padding: '12px' }}
+                  labelStyle={{ color: '#52525b', fontWeight: 'bold', fontSize: '11px', marginBottom: '4px' }}
+                  itemStyle={{ color: '#18181b', fontSize: '12px', fontWeight: 'bold' }}
                   formatter={(val: number) => [formatCurrency(val), 'Total']}
                 />
                 <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px', fontSize: '10px' }} />
-                <Bar name="Mês Anterior" dataKey="anterior" fill="#3f3f46" radius={[4, 4, 0, 0]} />
+                <Bar name="Mês Anterior" dataKey="anterior" fill="#a1a1aa" radius={[4, 4, 0, 0]} />
                 <Bar name="Mês Atual" dataKey="atual" fill="#3b82f6" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-3xl space-y-6 shadow-sm">
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 rounded-3xl space-y-6 shadow-sm">
           <div className="flex items-center gap-2">
             <Info size={20} className="text-blue-500" />
-            <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-100">Diferenças Notáveis</h3>
+            <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-800 dark:text-zinc-100">Diferenças Notáveis</h3>
           </div>
           <div className="space-y-4">
             {insights.length > 0 ? insights.map((insight, idx) => (
-              <div key={idx} className="p-4 bg-zinc-950 border border-zinc-800 rounded-2xl text-xs font-medium text-zinc-300 leading-relaxed shadow-sm">
+              <div key={idx} className="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-xs font-medium text-zinc-600 dark:text-zinc-300 leading-relaxed shadow-sm">
                 {insight}
               </div>
             )) : (
-              <p className="text-zinc-500 text-xs italic text-center py-10 border border-dashed border-zinc-800 rounded-2xl">
+              <p className="text-zinc-400 dark:text-zinc-500 text-xs italic text-center py-10 border border-dashed border-zinc-300 dark:border-zinc-800 rounded-2xl">
                 Aguardando mais dados para comparar...
               </p>
             )}

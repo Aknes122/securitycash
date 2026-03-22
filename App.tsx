@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from './hooks/useStore';
 import { Page, Transaction } from './types';
 import Sidebar from './components/Sidebar';
@@ -15,11 +15,22 @@ import TransactionForm from './components/TransactionForm';
 import ReferralPopup from './components/ReferralPopup';
 import { supabase } from './lib/supabase';
 import Auth from './components/Auth';
+import ResetPassword from './components/ResetPassword';
 import { LogOut, X, Sparkles } from 'lucide-react';
 import { Session } from '@supabase/supabase-js';
 
 const App: React.FC = () => {
   const [session, setSession] = useState<Session | null>(null);
+
+  // Detect recovery mode synchronously from URL before any async calls
+  // Supports both implicit flow (#type=recovery) and PKCE flow (?type=recovery)
+  const detectRecovery = () => {
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const queryParams = new URLSearchParams(window.location.search);
+    return hashParams.get('type') === 'recovery' || queryParams.get('type') === 'recovery';
+  };
+  const isRecoveryRef = useRef(detectRecovery());
+  const [isRecovery, setIsRecovery] = useState(isRecoveryRef.current);
   const [page, setPage] = useState<Page>('dashboard');
   // const [isLoggedOut, setIsLoggedOut] = useState(false); // Removido mock state
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -66,14 +77,32 @@ const App: React.FC = () => {
   }, [page, resetFilters, resetDashboardFilters]);
 
   useEffect(() => {
+    // Only set session from getSession if NOT in recovery flow
+    // (recovery session is handled by PASSWORD_RECOVERY event)
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
+      if (!isRecoveryRef.current) {
+        setSession(session);
+      }
     });
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        isRecoveryRef.current = true;
+        setIsRecovery(true);
+        setSession(session);
+      } else if (event === 'SIGNED_OUT') {
+        isRecoveryRef.current = false;
+        setIsRecovery(false);
+        setSession(null);
+      } else {
+        // SIGNED_IN, TOKEN_REFRESHED, USER_UPDATED, INITIAL_SESSION
+        // Do NOT clear recovery mode here — only SIGNED_OUT should do that
+        if (!isRecoveryRef.current) {
+          setSession(session);
+        }
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -120,6 +149,17 @@ const App: React.FC = () => {
   const handleLogout = async () => {
     await supabase.auth.signOut();
   };
+
+  if (isRecovery && session) {
+    return (
+      <ResetPassword
+        onDone={async () => {
+          await supabase.auth.signOut();
+          setIsRecovery(false);
+        }}
+      />
+    );
+  }
 
   if (!session) {
     return <Auth />;
