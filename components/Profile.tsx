@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { User, Shield, RotateCcw, AlertTriangle, CreditCard, CheckCircle2, ShieldCheck, ChevronRight, Crown, Sparkles, Gift, Copy, Share2, LogOut, Trash2, X, Timer } from 'lucide-react';
+import { User, Shield, RotateCcw, AlertTriangle, CreditCard, CheckCircle2, ShieldCheck, ChevronRight, Crown, Sparkles, Gift, Copy, Share2, LogOut, Trash2, X, Timer, Wallet } from 'lucide-react';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { formatCurrency } from '../utils/formatters';
 import { UserPlan } from '../types';
@@ -8,18 +8,31 @@ import { UserPlan } from '../types';
 interface ProfileProps {
   user: SupabaseUser | null;
   currentPlan: UserPlan;
+  baseSalary: number;
   onSetPlan: (plan: UserPlan) => void;
+  onSetBaseSalary: (salary: number) => void;
   onResetData: () => void;
   onDeleteAccount: () => void;
 }
 
-const Profile: React.FC<ProfileProps> = ({ user, currentPlan, onSetPlan, onResetData, onDeleteAccount }) => {
+const Profile: React.FC<ProfileProps> = ({ user, currentPlan, baseSalary, onSetPlan, onSetBaseSalary, onResetData, onDeleteAccount }) => {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showCloseAccountModal, setShowCloseAccountModal] = useState(false);
   const [countdown, setCountdown] = useState(5);
   const [isTimerActive, setIsTimerActive] = useState(false);
   const [showFinalConfirm, setShowFinalConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const [editingSalary, setEditingSalary] = useState(false);
+  const [tempSalary, setTempSalary] = useState(baseSalary?.toString() || '3000');
+
+  const handleSaveSalary = () => {
+    const val = parseFloat(tempSalary);
+    if (!isNaN(val) && val > 0) {
+      onSetBaseSalary(val);
+    }
+    setEditingSalary(false);
+  };
 
   const [copied, setCopied] = useState(false);
   const referralLink = "https://securitycash.app/invite/user123";
@@ -181,6 +194,41 @@ const Profile: React.FC<ProfileProps> = ({ user, currentPlan, onSetPlan, onReset
               <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                 {user?.email || 'usuario@securitycash.com.br'}
               </p>
+            </div>
+            
+            <div className="space-y-2 col-span-full pt-4 border-t border-zinc-100 dark:border-zinc-800">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase font-bold tracking-widest flex items-center gap-1">
+                    <Wallet size={12} className="text-emerald-500" /> Salário Base (Mês)
+                  </label>
+                  <p className="text-[10px] text-zinc-500">Usado pela Inteligência Artificial para gerar conselhos e alertas de impacto cognitivo ("Horas de Vida").</p>
+                </div>
+                {!editingSalary && (
+                  <button onClick={() => setEditingSalary(true)} className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline">
+                    Editar
+                  </button>
+                )}
+              </div>
+              
+              {editingSalary ? (
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    value={tempSalary}
+                    onChange={(e) => setTempSalary(e.target.value)}
+                    className="flex-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Ex: 3500.00"
+                  />
+                  <button onClick={handleSaveSalary} className="px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-bold transition-all">
+                    Salvar
+                  </button>
+                </div>
+              ) : (
+                <p className="text-xl font-black text-zinc-900 dark:text-zinc-100">
+                  {formatCurrency(baseSalary)}
+                </p>
+              )}
             </div>
           </div>
         </section>

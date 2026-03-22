@@ -38,6 +38,7 @@ const App: React.FC = () => {
     state,
     isLoading,
     setPlan,
+    setBaseSalary,
     updateFilters,
     updateDashboardFilters,
     addTransaction,
@@ -165,7 +166,7 @@ const App: React.FC = () => {
           {page === 'comparison' && <Comparison state={state} />}
           {page === 'reminders' && <Reminders state={state} onAddReminder={addReminder} onUpdateReminder={updateReminder} onDeleteReminder={deleteReminder} />}
           {page === 'goals' && <Goals state={state} onAddGoal={addGoal} onUpdateGoal={updateGoal} onDeleteGoal={deleteGoal} />}
-          {page === 'profile' && <Profile user={session?.user} currentPlan={state.userPlan} onSetPlan={setPlan} onResetData={resetData} onDeleteAccount={deleteAccount} />}
+          {page === 'profile' && <Profile user={session?.user} currentPlan={state.userPlan} baseSalary={state.baseSalary || 3000} onSetPlan={setPlan} onSetBaseSalary={setBaseSalary} onResetData={resetData} onDeleteAccount={deleteAccount} />}
         </div>
       </main>
 
@@ -209,7 +210,10 @@ const App: React.FC = () => {
             </h3>
             <TransactionForm
               categories={state.categories}
-              initialData={(editingTransaction || prefilledData) as any}
+              initialData={editingTransaction || undefined}
+              baseSalary={state.baseSalary || 3000}
+              goals={state.goals}
+              userPlan={state.userPlan}
               onSubmit={(data) => {
                 if (editingTransaction) {
                   updateTransaction(editingTransaction.id, data);

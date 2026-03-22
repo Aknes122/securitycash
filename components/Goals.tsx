@@ -1,9 +1,10 @@
 
 import React, { useState } from 'react';
 import { AppState, Goal } from '../types';
-import { Target, Plus, X, Edit2, Trash2, Calendar, TrendingUp } from 'lucide-react';
+import { Target, Plus, X, Edit2, Trash2, Calendar, TrendingUp, Crown } from 'lucide-react';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { PieChart, Pie, Cell, ResponsiveContainer, Text } from 'recharts';
+import SavingsGenerator from './SavingsGenerator';
 
 interface GoalsProps {
   state: AppState;
@@ -159,6 +160,23 @@ const Goals: React.FC<GoalsProps> = ({ state, onAddGoal, onUpdateGoal, onDeleteG
           </div>
         )}
       </div>
+
+      {state.userPlan === 'pro' ? (
+        <SavingsGenerator transactions={state.transactions} categories={state.categories} />
+      ) : (
+        <div className="bg-gradient-to-br from-zinc-100 to-zinc-200 dark:from-zinc-900/50 dark:to-zinc-800/80 border border-zinc-200 dark:border-zinc-800 rounded-[2.5rem] p-8 text-center space-y-4 shadow-sm opacity-80 mt-8 flex flex-col items-center justify-center animate-in fade-in duration-500">
+          <div className="w-14 h-14 bg-amber-500/10 rounded-2xl flex items-center justify-center mb-2">
+             <Crown size={28} className="text-amber-500" />
+          </div>
+          <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">Gerador de Economia de Custo Fixo</h3>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-md mx-auto">Nossa Inteligência Artificial proativa analisa suas despesas de internet, celular e aluguel para criar scripts certeiros de renegociação.</p>
+          <div className="pt-2">
+            <span className="px-3 py-1 bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded-full text-[10px] font-black uppercase tracking-widest border border-amber-500/30">
+              Disponível no Plano PRO
+            </span>
+          </div>
+        </div>
+      )}
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">

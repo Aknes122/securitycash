@@ -29,6 +29,7 @@ import {
 } from 'recharts';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { filterTransactions, calculateKPIs, getDailyChartData, getCategoryChartData } from '../utils/calculations';
+import DashboardInsights from './DashboardInsights';
 
 interface DashboardProps {
   state: AppState;
@@ -164,6 +165,15 @@ const Dashboard: React.FC<DashboardProps> = ({ state, isLoading, onUpdateFilters
           </div>
         )}
       </div>
+
+      {state.userPlan === 'pro' && (
+        <DashboardInsights 
+          transactions={state.transactions} 
+          categories={state.categories} 
+          goals={state.goals}
+          filters={state.dashboardFilters}
+        />
+      )}
 
       {/* KPIs Grid - Métricas */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
