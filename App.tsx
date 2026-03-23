@@ -11,6 +11,7 @@ import Comparison from './components/Comparison';
 import Reminders from './components/Reminders';
 import Goals from './components/Goals';
 import AIScanner from './components/AIScanner';
+import ImportModal from './components/ImportModal';
 import TransactionForm from './components/TransactionForm';
 import ReferralPopup from './components/ReferralPopup';
 import { supabase } from './lib/supabase';
@@ -40,15 +41,18 @@ const App: React.FC = () => {
   // Estados Globais de Modais
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [showReferralPopup, setShowReferralPopup] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [prefilledData, setPrefilledData] = useState<Partial<Transaction> | null>(null);
+  const [formInitialSmartMode, setFormInitialSmartMode] = useState(false);
 
   const {
     state,
     isLoading,
     setPlan,
     setBaseSalary,
+    setUserName,
     updateFilters,
     updateDashboardFilters,
     addTransaction,
@@ -65,6 +69,7 @@ const App: React.FC = () => {
     updateGoal,
     deleteGoal,
     resetData,
+    fetchData,
     deleteAccount,
     resetFilters,
     resetDashboardFilters
@@ -140,9 +145,10 @@ const App: React.FC = () => {
 
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
 
-  const handleOpenForm = (t: Transaction | null = null, prefill: Partial<Transaction> | null = null) => {
+  const handleOpenForm = (t: Transaction | null = null, prefill: Partial<Transaction> | null = null, isSmart: boolean = false) => {
     setEditingTransaction(t);
     setPrefilledData(prefill);
+    setFormInitialSmartMode(isSmart);
     setIsFormOpen(true);
   };
 
@@ -199,7 +205,9 @@ const App: React.FC = () => {
               isLoading={isLoading}
               onUpdateFilters={updateDashboardFilters}
               onAddRecord={() => handleOpenForm()}
+              onAddRecordVoice={() => handleOpenForm(null, null, true)}
               onScanIA={() => setIsScannerOpen(true)}
+              onOpenImport={() => setIsImportModalOpen(true)}
               onGoToReminders={() => setPage('reminders')}
               onGoToGoals={() => setPage('goals')}
               theme={theme}
@@ -221,7 +229,19 @@ const App: React.FC = () => {
           {page === 'comparison' && <Comparison state={state} />}
           {page === 'reminders' && <Reminders state={state} onAddReminder={addReminder} onUpdateReminder={updateReminder} onDeleteReminder={deleteReminder} />}
           {page === 'goals' && <Goals state={state} onAddGoal={addGoal} onUpdateGoal={updateGoal} onDeleteGoal={deleteGoal} />}
-          {page === 'profile' && <Profile user={session?.user} currentPlan={state.userPlan} baseSalary={state.baseSalary || 3000} onSetPlan={setPlan} onSetBaseSalary={setBaseSalary} onResetData={resetData} onDeleteAccount={deleteAccount} />}
+          {page === 'profile' && (
+            <Profile 
+              user={session?.user} 
+              userName={state.userName || ''}
+              currentPlan={state.userPlan} 
+              baseSalary={state.baseSalary || 3000} 
+              onSetPlan={setPlan} 
+              onUpdateUserName={setUserName}
+              onSetBaseSalary={setBaseSalary} 
+              onResetData={resetData} 
+              onDeleteAccount={deleteAccount} 
+            />
+          )}
         </div>
       </main>
 
@@ -269,6 +289,7 @@ const App: React.FC = () => {
               baseSalary={state.baseSalary || 3000}
               goals={state.goals}
               userPlan={state.userPlan}
+              initialSmartMode={formInitialSmartMode}
               onSubmit={(data) => {
                 if (editingTransaction) {
                   updateTransaction(editingTransaction.id, data);
@@ -290,6 +311,13 @@ const App: React.FC = () => {
       )}
 
       <div id="toast-root" className="fixed bottom-4 right-4 z-[9999]"></div>
+      {isImportModalOpen && (
+        <ImportModal
+          categories={state.categories}
+          onImport={addTransactionsBulk}
+          onClose={() => setIsImportModalOpen(false)}
+        />
+      )}
     </div>
   );
 };

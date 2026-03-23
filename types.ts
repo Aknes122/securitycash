@@ -57,6 +57,7 @@ export interface AppState {
     endDate: string;
   };
   userPlan: UserPlan;
+  userName?: string;
   baseSalary?: number;
 }
 

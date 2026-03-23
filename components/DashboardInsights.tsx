@@ -127,20 +127,20 @@ const DashboardInsights: React.FC<Props> = ({ transactions, categories, goals, f
       {/* Placar Gamificado Circle */}
       <div className="relative shrink-0 flex items-center justify-center">
         {loading ? (
-          <div className="w-24 h-24 rounded-full border-4 border-dashed border-zinc-300 dark:border-zinc-700 flex items-center justify-center animate-spin-slow">
+          <div className="w-20 h-20 rounded-full border-4 border-dashed border-zinc-300 dark:border-zinc-700 flex items-center justify-center animate-spin-slow">
             <Loader2 size={24} className="text-zinc-400 animate-spin" />
           </div>
         ) : (
-          <div className={`w-24 h-24 rounded-full border-4 ${ringClass} flex flex-col items-center justify-center bg-white dark:bg-zinc-900 shadow-xl relative z-10`}>
-            <span className="text-[10px] uppercase font-black tracking-tighter text-zinc-400">Score</span>
-            <span className={`text-3xl font-black ${textColorClass} leading-none`}>{score}</span>
+          <div className={`w-20 h-20 rounded-full border-4 ${ringClass} flex flex-col items-center justify-center bg-white dark:bg-zinc-950 shadow-2xl relative z-10 scale-110 md:scale-100 transition-transform`}>
+            <span className="text-[9px] uppercase font-black tracking-tighter text-zinc-400">Score</span>
+            <span className={`text-2xl font-black ${textColorClass} leading-none`}>{score}</span>
           </div>
         )}
       </div>
       
       <div className="flex-1 space-y-3 z-10 text-center md:text-left w-full">
-        <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 dark:text-zinc-400 mb-1 flex items-center justify-center md:justify-start gap-1">
-          <Activity size={12} /> Diagnóstico Inteligente 360º
+        <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400 mb-1 flex items-center justify-center md:justify-start gap-2">
+          <BrainCircuit size={14} className="text-blue-500" /> IA Advisor
         </h4>
         
         {loading ? (

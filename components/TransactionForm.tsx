@@ -13,9 +13,10 @@ interface TransactionFormProps {
   baseSalary?: number;
   goals?: Goal[];
   userPlan?: 'basic' | 'pro';
+  initialSmartMode?: boolean;
 }
 
-const TransactionForm: React.FC<TransactionFormProps> = ({ categories, initialData, onSubmit, onCancel, baseSalary, goals, userPlan }) => {
+const TransactionForm: React.FC<TransactionFormProps> = ({ categories, initialData, onSubmit, onCancel, baseSalary, goals, userPlan, initialSmartMode }) => {
   const [type, setType] = useState<TransactionType>(initialData?.type || 'despesa');
   const [date, setDate] = useState(initialData?.date || new Date().toISOString().split('T')[0]);
   const [categoryId, setCategoryId] = useState(initialData?.categoryId || '');
@@ -27,7 +28,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ categories, initialDa
   const [impactWarning, setImpactWarning] = useState<string | null>(null);
 
   // Smart Input (AI 2.0)
-  const [smartMode, setSmartMode] = useState(false);
+  const [smartMode, setSmartMode] = useState(initialSmartMode || false);
   const [smartText, setSmartText] = useState('');
   const [parsedItems, setParsedItems] = useState<Array<{amount: number; description: string; categoryId: string; type: 'despesa'|'entrada'; date: string; saved?: boolean}>>([]);
   

@@ -15,6 +15,7 @@ export const useStore = (userId?: string) => {
         reminders: [],
         goals: [],
         userPlan: 'basic',
+        userName: '',
         baseSalary: 3000,
         filters: { period: '30d', categoryId: 'all', search: '', type: 'all', startDate: '', endDate: '' },
         dashboardFilters: { period: '30d', startDate: '', endDate: '' }
@@ -61,6 +62,7 @@ export const useStore = (userId?: string) => {
         startDate: '',
         endDate: ''
       },
+      userName: '',
       baseSalary: 3000
     };
   };
@@ -79,6 +81,13 @@ export const useStore = (userId?: string) => {
     if (!userId) return;
     setIsLoading(true);
     try {
+      if (userId) {
+        const { data: { session } } = await supabase.auth.getSession();
+        const metaName = session?.user?.user_metadata?.full_name || '';
+        if (metaName) {
+          setState(prev => ({ ...prev, userName: metaName }));
+        }
+      }
       // 1. Verificar se o usuário já migrou os dados
       const { data: profile } = await supabase
         .from('profiles')
@@ -229,6 +238,19 @@ export const useStore = (userId?: string) => {
   const setBaseSalary = useCallback((salary: number) => {
     setState(prev => ({ ...prev, baseSalary: salary }));
   }, []);
+
+  const setUserName = useCallback((name: string) => {
+    setState(prev => {
+      const newState = { ...prev, userName: name };
+      if (userId) {
+        localStorage.setItem(getKey(), JSON.stringify(newState));
+        supabase.auth.updateUser({
+          data: { full_name: name }
+        });
+      }
+      return newState;
+    });
+  }, [userId]);
 
   const updateFilters = useCallback((newFilters: Partial<Filters>) => {
     setState(prev => ({
@@ -572,8 +594,14 @@ export const useStore = (userId?: string) => {
     isLoading,
     setPlan,
     setBaseSalary,
+    setUserName,
     updateFilters,
     updateDashboardFilters,
+    resetData,
+    fetchData,
+    deleteAccount,
+    resetFilters,
+    resetDashboardFilters,
     addTransaction,
     addTransactionsBulk,
     updateTransaction,
@@ -586,10 +614,6 @@ export const useStore = (userId?: string) => {
     deleteReminder,
     addGoal,
     updateGoal,
-    deleteGoal,
-    resetData,
-    deleteAccount,
-    resetFilters,
-    resetDashboardFilters
+    deleteGoal
   };
 };

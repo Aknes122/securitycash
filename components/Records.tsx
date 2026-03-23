@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { AppState, Filters, Transaction } from '../types';
 import { Search, Plus, Eye, Edit2, Trash2, ChevronLeft, ChevronRight, X, Filter, Sparkles, RotateCcw, Calendar as CalendarIcon, TrendingUp, TrendingDown, DollarSign, Tag, FileText } from 'lucide-react';
@@ -14,6 +13,7 @@ interface RecordsProps {
   onDeleteTransaction: (id: string) => void;
   onOpenForm: (t: Transaction | null) => void;
   onOpenScanner: () => void;
+  onOpenImport: () => void;
 }
 
 const Records: React.FC<RecordsProps> = ({
@@ -22,10 +22,10 @@ const Records: React.FC<RecordsProps> = ({
   onAddTransactionsBulk,
   onDeleteTransaction,
   onOpenForm,
-  onOpenScanner
+  onOpenScanner,
+  onOpenImport
 }) => {
   const [viewingTransaction, setViewingTransaction] = useState<Transaction | null>(null);
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -92,7 +92,7 @@ const Records: React.FC<RecordsProps> = ({
           {state.userPlan === 'pro' && (
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setIsImportModalOpen(true)}
+                onClick={onOpenImport}
                 className="flex items-center gap-2 px-5 py-2.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 rounded-xl font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-95 transition-all whitespace-nowrap text-xs sm:text-sm border border-zinc-200 dark:border-zinc-700"
               >
                 <FileText size={18} />
@@ -438,13 +438,6 @@ const Records: React.FC<RecordsProps> = ({
             </div>
           </div>
         </div>
-      )}
-      {isImportModalOpen && (
-        <ImportModal
-          categories={state.categories}
-          onImport={onAddTransactionsBulk}
-          onClose={() => setIsImportModalOpen(false)}
-        />
       )}
     </div>
   );

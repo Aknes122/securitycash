@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Mail, Lock, Loader2, ArrowRight, ShieldCheck, KeyRound, CheckCircle2, ChevronLeft } from 'lucide-react';
+import { Mail, Lock, Loader2, ArrowRight, ShieldCheck, KeyRound, CheckCircle2, ChevronLeft, User } from 'lucide-react';
 
 type AuthView = 'login' | 'register' | 'forgot' | 'forgot-success';
 
@@ -9,6 +9,7 @@ const Auth = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [view, setView] = useState<AuthView>('login');
+    const [name, setName] = useState('');
     const [error, setError] = useState<string | null>(null);
 
     const isLogin = view === 'login';
@@ -23,7 +24,15 @@ const Auth = () => {
                 const { error } = await supabase.auth.signInWithPassword({ email, password });
                 if (error) throw error;
             } else {
-                const { error } = await supabase.auth.signUp({ email, password });
+                const { error } = await supabase.auth.signUp({ 
+                    email, 
+                    password,
+                    options: {
+                        data: {
+                            full_name: name
+                        }
+                    }
+                });
                 if (error) throw error;
             }
         } catch (error: any) {
@@ -189,6 +198,19 @@ const Auth = () => {
 
                     <form onSubmit={handleAuth} className="space-y-4">
                         <div className="space-y-4">
+                            {!isLogin && (
+                                <div className="relative group">
+                                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-blue-500 transition-colors" size={20} />
+                                    <input
+                                        type="text"
+                                        placeholder="Seu nome completo"
+                                        value={name}
+                                        onChange={(e) => setName(e.target.value)}
+                                        className="w-full pl-12 pr-4 py-4 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-zinc-900 dark:text-white placeholder:text-zinc-400"
+                                        required={!isLogin}
+                                    />
+                                </div>
+                            )}
                             <div className="relative group">
                                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-blue-500 transition-colors" size={20} />
                                 <input
@@ -250,7 +272,7 @@ const Auth = () => {
 
                     <div className="text-center">
                         <button
-                            onClick={() => { setError(null); setView(isLogin ? 'register' : 'login'); }}
+                            onClick={() => { setError(null); setView(isLogin ? 'register' : 'login'); setName(''); }}
                             className="text-sm font-bold text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors"
                         >
                             {isLogin ? (

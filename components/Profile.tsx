@@ -7,15 +7,27 @@ import { UserPlan } from '../types';
 
 interface ProfileProps {
   user: SupabaseUser | null;
+  userName: string;
   currentPlan: UserPlan;
   baseSalary: number;
   onSetPlan: (plan: UserPlan) => void;
+  onUpdateUserName: (name: string) => void;
   onSetBaseSalary: (salary: number) => void;
   onResetData: () => void;
   onDeleteAccount: () => void;
 }
 
-const Profile: React.FC<ProfileProps> = ({ user, currentPlan, baseSalary, onSetPlan, onSetBaseSalary, onResetData, onDeleteAccount }) => {
+const Profile: React.FC<ProfileProps> = ({ 
+  user, 
+  userName,
+  currentPlan, 
+  baseSalary, 
+  onSetPlan, 
+  onUpdateUserName,
+  onSetBaseSalary, 
+  onResetData, 
+  onDeleteAccount 
+}) => {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showCloseAccountModal, setShowCloseAccountModal] = useState(false);
   const [countdown, setCountdown] = useState(5);
@@ -25,6 +37,8 @@ const Profile: React.FC<ProfileProps> = ({ user, currentPlan, baseSalary, onSetP
 
   const [editingSalary, setEditingSalary] = useState(false);
   const [tempSalary, setTempSalary] = useState(baseSalary?.toString() || '3000');
+  const [editingName, setEditingName] = useState(false);
+  const [tempName, setTempName] = useState(userName || user?.user_metadata?.full_name || '');
 
   const handleSaveSalary = () => {
     const val = parseFloat(tempSalary);
@@ -32,6 +46,13 @@ const Profile: React.FC<ProfileProps> = ({ user, currentPlan, baseSalary, onSetP
       onSetBaseSalary(val);
     }
     setEditingSalary(false);
+  };
+
+  const handleSaveName = () => {
+    if (tempName.trim()) {
+      onUpdateUserName(tempName.trim());
+    }
+    setEditingName(false);
   };
 
   const [copied, setCopied] = useState(false);
@@ -184,10 +205,32 @@ const Profile: React.FC<ProfileProps> = ({ user, currentPlan, baseSalary, onSetP
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div className="space-y-1">
-              <label className="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase font-bold tracking-widest">Nome</label>
-              <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                {user?.user_metadata?.full_name || 'Usuário SecurityCash'}
-              </p>
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase font-bold tracking-widest">Nome</label>
+                {!editingName && (
+                  <button onClick={() => setEditingName(true)} className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline">
+                    Alterar
+                  </button>
+                )}
+              </div>
+              {editingName ? (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={tempName}
+                    onChange={(e) => setTempName(e.target.value)}
+                    className="flex-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Seu nome"
+                  />
+                  <button onClick={handleSaveName} className="px-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition-all">
+                    OK
+                  </button>
+                </div>
+              ) : (
+                <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                  {userName || user?.user_metadata?.full_name || 'Usuário SecurityCash'}
+                </p>
+              )}
             </div>
             <div className="space-y-1">
               <label className="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase font-bold tracking-widest">Email</label>
