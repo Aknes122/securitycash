@@ -52,6 +52,7 @@ const App: React.FC = () => {
     updateFilters,
     updateDashboardFilters,
     addTransaction,
+    addTransactionsBulk,
     updateTransaction,
     deleteTransaction,
     addCategory,
@@ -209,6 +210,7 @@ const App: React.FC = () => {
               state={state}
               onUpdateFilters={updateFilters}
               onAddTransaction={addTransaction}
+              onAddTransactionsBulk={addTransactionsBulk}
               onUpdateTransaction={updateTransaction}
               onDeleteTransaction={deleteTransaction}
               onOpenForm={handleOpenForm}

@@ -169,3 +169,54 @@ Retorne SOMENTE um objeto JSON nesse formato rígido:
     };
   }
 };
+
+/**
+ * AI 3.0: Motor de Importação de Extrato Bancário
+ * Converte texto bruto/CSV/OFX em um array de transações categorizadas.
+ */
+export const parseBankStatement = async (
+  content: string,
+  categories: Category[]
+): Promise<Omit<Transaction, 'id'>[]> => {
+  try {
+    const genAI = getGenAI();
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+    const catsContext = categories.map(c => `ID: ${c.id} | Nome: ${c.name} | Tipo: ${c.kind}`).join('\n');
+
+    const prompt = `Você é um especialista em conciliação bancária e extração de dados.
+O usuário enviou o conteúdo de um extrato bancário (pode estar em CSV, texto de PDF ou colado do app do banco).
+
+Sua tarefa:
+1. Extrair TODAS as transações válidas (entradas e saídas). Ignorar saldos, cabeçalhos ou rodapés.
+2. Identificar para cada transação:
+   - Data no formato YYYY-MM-DD (se o ano não estiver claro, use 2026).
+   - Descrição clara e concisa.
+   - Valor numérico positivo (sempre positivo).
+   - Tipo: 'entrada' (recebimento/crédito) ou 'despesa' (pagamento/débito).
+   - CategoryID: Atribua o ID da categoria que melhor se encaixa da lista abaixo.
+
+Lista de Categorias Disponíveis:
+${catsContext}
+
+Conteúdo do Extrato:
+"${content}"
+
+Retorne um array JSON estrito no formato abaixo. APENAS O JSON, SEM MARKDOWN:
+[
+  { "date": "2026-03-23", "description": "Supermercado XYZ", "amount": 150.20, "type": "despesa", "categoryId": "ID_AQUI" }
+]`;
+
+    const result = await model.generateContent({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: {
+        responseMimeType: "application/json"
+      }
+    });
+
+    return JSON.parse(result.response.text());
+  } catch (err) {
+    console.error("Erro ao processar extrato bancário:", err);
+    throw new Error("Não foi possível processar o extrato. Verifique o formato do arquivo.");
+  }
+};

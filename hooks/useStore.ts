@@ -556,6 +556,17 @@ export const useStore = (userId?: string) => {
     }
   }, [userId]);
 
+  const addTransactionsBulk = useCallback((newTransactions: Omit<Transaction, 'id'>[]) => {
+    const transactionsWithIds = newTransactions.map(t => ({
+      ...t,
+      id: crypto.randomUUID()
+    }));
+    setState(prev => ({
+      ...prev,
+      transactions: [...prev.transactions, ...transactionsWithIds].sort((a, b) => b.date.localeCompare(a.date))
+    }));
+  }, []);
+
   return {
     state,
     isLoading,
@@ -564,6 +575,7 @@ export const useStore = (userId?: string) => {
     updateFilters,
     updateDashboardFilters,
     addTransaction,
+    addTransactionsBulk,
     updateTransaction,
     deleteTransaction,
     addCategory,

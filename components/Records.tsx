@@ -1,13 +1,15 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { AppState, Filters, Transaction } from '../types';
-import { Search, Plus, Eye, Edit2, Trash2, ChevronLeft, ChevronRight, X, Filter, Sparkles, RotateCcw, Calendar as CalendarIcon, TrendingUp, TrendingDown, DollarSign, Tag } from 'lucide-react';
+import { Search, Plus, Eye, Edit2, Trash2, ChevronLeft, ChevronRight, X, Filter, Sparkles, RotateCcw, Calendar as CalendarIcon, TrendingUp, TrendingDown, DollarSign, Tag, FileText } from 'lucide-react';
 import { formatCurrency, formatDate } from '../utils/formatters';
+import ImportModal from './ImportModal';
 
 interface RecordsProps {
   state: AppState;
   onUpdateFilters: (f: Partial<Filters>) => void;
   onAddTransaction: (t: Omit<Transaction, 'id'>) => void;
+  onAddTransactionsBulk: (ts: Omit<Transaction, 'id'>[]) => void;
   onUpdateTransaction: (id: string, t: Partial<Transaction>) => void;
   onDeleteTransaction: (id: string) => void;
   onOpenForm: (t: Transaction | null) => void;
@@ -17,11 +19,13 @@ interface RecordsProps {
 const Records: React.FC<RecordsProps> = ({
   state,
   onUpdateFilters,
+  onAddTransactionsBulk,
   onDeleteTransaction,
   onOpenForm,
   onOpenScanner
 }) => {
   const [viewingTransaction, setViewingTransaction] = useState<Transaction | null>(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -86,13 +90,22 @@ const Records: React.FC<RecordsProps> = ({
             <Filter size={20} />
           </button>
           {state.userPlan === 'pro' && (
-            <button
-              onClick={onOpenScanner}
-              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl font-bold shadow-lg shadow-emerald-600/20 active:scale-95 transition-all whitespace-nowrap text-xs sm:text-sm"
-            >
-              <Sparkles size={18} />
-              <span>Scan IA</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsImportModalOpen(true)}
+                className="flex items-center gap-2 px-5 py-2.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 rounded-xl font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-95 transition-all whitespace-nowrap text-xs sm:text-sm border border-zinc-200 dark:border-zinc-700"
+              >
+                <FileText size={18} />
+                <span>Importar</span>
+              </button>
+              <button
+                onClick={onOpenScanner}
+                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl font-bold shadow-lg shadow-emerald-600/20 active:scale-95 transition-all whitespace-nowrap text-xs sm:text-sm"
+              >
+                <Sparkles size={18} />
+                <span>Scan IA</span>
+              </button>
+            </div>
           )}
           <button
             onClick={() => onOpenForm(null)}
@@ -425,6 +438,13 @@ const Records: React.FC<RecordsProps> = ({
             </div>
           </div>
         </div>
+      )}
+      {isImportModalOpen && (
+        <ImportModal
+          categories={state.categories}
+          onImport={onAddTransactionsBulk}
+          onClose={() => setIsImportModalOpen(false)}
+        />
       )}
     </div>
   );
