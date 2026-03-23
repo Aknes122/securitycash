@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { AppState, Transaction, Filters, Category, UserPlan, Reminder, Goal, Negotiation, NegotiationMessage } from '../types';
+import { AppState, Transaction, Filters, Category, UserPlan, Reminder, Goal } from '../types';
 import { SEED_CATEGORIES, SEED_TRANSACTIONS, SEED_REMINDERS, SEED_GOALS, STORAGE_KEY } from '../constants';
 import { supabase } from '../lib/supabase';
 
@@ -14,7 +14,6 @@ export const useStore = (userId?: string) => {
         categories: SEED_CATEGORIES,
         reminders: [],
         goals: [],
-        negotiations: [],
         userPlan: 'basic',
         baseSalary: 3000,
         filters: { period: '30d', categoryId: 'all', search: '', type: 'all', startDate: '', endDate: '' },
@@ -28,7 +27,6 @@ export const useStore = (userId?: string) => {
         const parsed = JSON.parse(saved);
         if (!parsed.reminders) parsed.reminders = [];
         if (!parsed.goals) parsed.goals = [];
-        if (!parsed.negotiations) parsed.negotiations = [];
         if (!parsed.userPlan) parsed.userPlan = 'basic';
         if (!parsed.baseSalary) parsed.baseSalary = 3000;
         if (!parsed.filters.startDate) parsed.filters.startDate = '';
@@ -49,7 +47,6 @@ export const useStore = (userId?: string) => {
       categories: SEED_CATEGORIES, // Keep default categories
       reminders: [], // Empty
       goals: [], // Empty
-      negotiations: [], // Empty
       userPlan: 'basic',
       filters: {
         period: '30d',
@@ -559,46 +556,6 @@ export const useStore = (userId?: string) => {
     }
   }, [userId]);
 
-  // --- GERENCIAMENTO DE NEGOCIAÇÕES ---
-  const addNegotiation = useCallback((negotiation: Omit<Negotiation, 'id' | 'createdAt' | 'updatedAt' | 'messages'>) => {
-    const newNegotiation: Negotiation = {
-      ...negotiation,
-      id: crypto.randomUUID(),
-      messages: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    setState(prev => ({ ...prev, negotiations: [...prev.negotiations, newNegotiation] }));
-  }, []);
-
-  const addNegotiationMessage = useCallback((negotiationId: string, role: NegotiationMessage['role'], content: string) => {
-    setState(prev => ({
-      ...prev,
-      negotiations: prev.negotiations.map(n => {
-        if (n.id === negotiationId) {
-          return {
-            ...n,
-            messages: [...n.messages, { id: crypto.randomUUID(), role, content, createdAt: new Date().toISOString() }],
-            updatedAt: new Date().toISOString()
-          };
-        }
-        return n;
-      })
-    }));
-  }, []);
-
-  const updateNegotiationStatus = useCallback((negotiationId: string, status: Negotiation['status']) => {
-    setState(prev => ({
-      ...prev,
-      negotiations: prev.negotiations.map(n => n.id === negotiationId ? { ...n, status, updatedAt: new Date().toISOString() } : n)
-    }));
-  }, []);
-
-  const deleteNegotiation = useCallback((negotiationId: string) => {
-    setState(prev => ({ ...prev, negotiations: prev.negotiations.filter(n => n.id !== negotiationId) }));
-  }, []);
-
-
   return {
     state,
     isLoading,
@@ -618,10 +575,6 @@ export const useStore = (userId?: string) => {
     addGoal,
     updateGoal,
     deleteGoal,
-    addNegotiation,
-    addNegotiationMessage,
-    updateNegotiationStatus,
-    deleteNegotiation,
     resetData,
     deleteAccount,
     resetFilters,

@@ -45,30 +45,11 @@ export interface Filters {
   endDate: string;
 }
 
-export interface NegotiationMessage {
-  id: string;
-  role: 'user' | 'ai' | 'system';
-  content: string;
-  createdAt: string;
-}
-
-export interface Negotiation {
-  id: string;
-  serviceName: string;
-  currentAmount: number;
-  targetAmount: number;
-  status: 'active' | 'won' | 'lost';
-  messages: NegotiationMessage[];
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface AppState {
   transactions: Transaction[];
   categories: Category[];
   reminders: Reminder[];
   goals: Goal[];
-  negotiations: Negotiation[];
   filters: Filters;
   dashboardFilters: {
     period: PeriodFilter;

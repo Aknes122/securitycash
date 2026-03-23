@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { Category, Transaction, NegotiationMessage } from "../types";
+import { Category, Transaction } from "../types";
 
 // Obter a instância com a API Key do projeto
 const getGenAI = () => {
@@ -73,31 +73,6 @@ A frase deve ser impactante e encorajar controle financeiro (ou elogiar se tiver
     return "Lembre-se: O controle da sua mente reflete no controle da sua carteira. Acompanhe os gastos de perto!";
   }
 };
-
-/**
- * Gera um roteiro de negociação para despesas fixas (Internet, Telefonia, Aluguel).
- */
-export const generateNegotiationScript = async (expenseName: string, averageAmount: number): Promise<string> => {
-  try {
-    const genAI = getGenAI();
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-
-    const prompt = `Atue como um educador financeiro objetivo e realista.
-O usuário precisa ligar para a central de atendimento para tentar baixar a fatura do serviço de "${expenseName}", valor médio atual de R$ ${averageAmount.toFixed(2)}.
-Crie um roteiro (script) de ligação telefônica focado numa negociação direta, educada, coerente e muito firme. Sem exageros ou invencionices, use os seguintes passos:
-1. Identificação amigável e confirmação de ser bom cliente pagador.
-2. A constatação direta que o valor atual está pesado no orçamento.
-3. A menção de que possui ofertas melhores de concorrentes da região.
-4. O pedido objetivo por um desconto, isenção ou quebra de fidelidade.
-Gere APENAS o roteiro pronto para leitura, de forma clara, natural e concisa. Retorne o texto formatado em Markdown simples.`;
-
-    const result = await model.generateContent(prompt);
-    return result.response.text().trim();
-  } catch (error) {
-    console.error("Erro ao gerar script de economia:", error);
-  }
-};
-
 /**
  * AI 2.0: Converte uma frase natural em um JSON de Transação (Auto-Categorização)
  */
@@ -191,81 +166,6 @@ Retorne SOMENTE um objeto JSON nesse formato rígido:
       healthScore: 70,
       insight: "Tente focar na manutenção do controle. Evite despesas variáveis excessivas este fim de semana.",
       anomaly: null
-    };
-  }
-};
-
-/**
- * AI 3.0: Motor de Negociação em Tempo Real (Estilo FBI / Chris Voss)
- */
-export const continueNegotiationChat = async (
-  serviceName: string,
-  currentAmount: number,
-  targetAmount: number,
-  history: NegotiationMessage[],
-  userRebuttal: string
-): Promise<{ script: string, status: 'active' | 'won' | 'lost' }> => {
-  try {
-    const genAI = getGenAI();
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-2.0-flash",
-      systemInstruction: `Você é um Consultor de Negociação de elite, treinado nas técnicas de Chris Voss (ex-negociador chefe do FBI).
-O usuário quer negociar com empresa que fornece "${serviceName}".
-Elê paga atualmente R$ ${currentAmount}/mês e quer chegar a R$ ${targetAmount}/mês.
-
-Sua missão: gerar um SCRIPT exato para o usuário FALAR ou COPIAR agora.
-
-Táticas que você domina:
-- Empatia Tática: Comece sempre com rótulos emocionais ("Parece que...") para criar rapport
-- Ancoragem firme: Repita o valor alvo com calma. Nunca ceda ao primeiro contra-valor
-- Perguntas calibradas "Como" e "O Quê" que forçam o atendente a trabalhar por você
-- CARTA NA MANGA — Améaca de Cancelamento (use com parcimônia): Só use esta tática se o atendente já recusou firmemente 2 ou mais vezes E a conversa parece travada. Ameace cancelar de forma calma e definitiva. Não use isso na abertura nem repita mais de uma vez — perde o efeito. É uma carta que só funciona quando bem cronometrada.
-- Silêncio e repetição: Repetir o valor alvo sem justificar também é uma tática válida.
-
-Regras de status:
-- Sempre retorne status: "active" a menos que o atendente CONFIRME EXPLICITAMENTE o valor alvo (R$ ${targetAmount} ou menor)
-- Se confirmado o valor alvo: retorne status: "won" com uma frase de agradecimento gentil
-- NUNCA retorne status: "lost". Apenas o usuário pode encerrar uma negociação como perdida.
-
-Retorne APENAS este JSON:
-{
-  "script": "a frase exata para falar agora, direto ao ponto",
-  "status": "active" | "won"
-}`
-    });
-
-    const contents: Array<{ role: 'user' | 'model', parts: [{ text: string }] }> = [];
-
-    // Empilhar histórico
-    const validHistory = history.filter(h => h.role !== 'system');
-    for (const msg of validHistory) {
-      contents.push({
-        role: msg.role === 'ai' ? 'model' : 'user',
-        parts: [{ text: msg.content }]
-      });
-    }
-
-    // Se é a primeira mensagem, injeta o setup. Se não, injeta o rebuttal do vendedor.
-    let nextPrompt = "";
-    if (history.length === 0) {
-      nextPrompt = "Olá, estou pronto para iniciar a negociação. Qual a minha exata frase de abertura para ligar lá agora?";
-    } else {
-      nextPrompt = `O vendedor respondeu exatamente isso: "${userRebuttal}"\n Qual é minha tréplica tática agora? Apenas a frase a ser dita.`;
-    }
-
-    contents.push({ role: 'user', parts: [{ text: nextPrompt }] });
-
-    const result = await model.generateContent({ 
-      contents,
-      generationConfig: { responseMimeType: "application/json" }
-    });
-    
-    return JSON.parse(result.response.text());
-  } catch (err) {
-    console.error("Erro no chat de negociação:", err);
-    return {
-      script: "Lamento, perdi o sinal tático. Diga a ele: 'Como eu posso resolver isso se o preço continua inviável para mim?'",
-      status: 'active' as const
     };
   }
 };
