@@ -223,6 +223,7 @@ const App: React.FC = () => {
               onDeleteTransaction={deleteTransaction}
               onOpenForm={handleOpenForm}
               onOpenScanner={() => setIsScannerOpen(true)}
+              onOpenImport={() => setIsImportModalOpen(true)}
             />
           )}
           {page === 'categories' && <CategoryManager state={state} onAddCategory={addCategory} onUpdateCategory={updateCategory} onDeleteCategory={deleteCategory} />}

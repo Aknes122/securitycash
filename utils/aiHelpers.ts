@@ -177,7 +177,7 @@ Retorne SOMENTE um objeto JSON nesse formato rígido:
 export const parseBankStatement = async (
   content: string,
   categories: Category[]
-): Promise<Omit<Transaction, 'id'>[]> => {
+): Promise<{ transactions: Omit<Transaction, 'id'>[], newCategories: Omit<Category, 'id'>[] }> => {
   try {
     const genAI = getGenAI();
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
@@ -195,6 +195,7 @@ Sua tarefa:
    - Valor numérico positivo (sempre positivo).
    - Tipo: 'entrada' (recebimento/crédito) ou 'despesa' (pagamento/débito).
    - CategoryID: Atribua o ID da categoria que melhor se encaixa da lista abaixo.
+   - **IMPORTANTE**: Se nenhuma categoria da lista for adequada, você DEVE sugerir uma nova categoria criativa (ex: 'Streaming', 'Pets', 'Beleza') e retornar em 'newCategories'. Nesse caso, o 'categoryId' da transação deve ser EXATAMENTE o Nome dessa nova categoria.
 
 Lista de Categorias Disponíveis:
 ${catsContext}
@@ -202,10 +203,16 @@ ${catsContext}
 Conteúdo do Extrato:
 "${content}"
 
-Retorne um array JSON estrito no formato abaixo. APENAS O JSON, SEM MARKDOWN:
-[
-  { "date": "2026-03-23", "description": "Supermercado XYZ", "amount": 150.20, "type": "despesa", "categoryId": "ID_AQUI" }
-]`;
+Retorne um objeto JSON estrito no formato abaixo. APENAS O JSON, SEM MARKDOWN:
+{
+  "transactions": [
+    { "date": "2026-03-23", "description": "Supermercado XYZ", "amount": 150.20, "type": "despesa", "categoryId": "ID_CATEGORIA_OU_NOME_DA_SUGERIDA" }
+  ],
+  "newCategories": [
+     { "name": "Nome Sugerido", "kind": "despesa", "color": "#HEX_COR_ALEATORIA" }
+  ]
+}
+Se não sugerir nenhuma categoria nova, retorne "newCategories" como array vazio.`;
 
     const result = await model.generateContent({
       contents: [{ role: 'user', parts: [{ text: prompt }] }],

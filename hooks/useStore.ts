@@ -360,15 +360,18 @@ export const useStore = (userId?: string) => {
     }
   }, [userId]);
 
-  const resetData = useCallback(async () => {
+  const resetData = useCallback(async (includeCategories: boolean = false) => {
     if (userId) {
       setIsLoading(true);
-      await Promise.all([
+      const promises = [
         supabase.from('transactions').delete().eq('user_id', userId),
         supabase.from('reminders').delete().eq('user_id', userId),
-        supabase.from('goals').delete().eq('user_id', userId),
-        supabase.from('categories').delete().eq('user_id', userId)
-      ]);
+        supabase.from('goals').delete().eq('user_id', userId)
+      ];
+      if (includeCategories) {
+        promises.push(supabase.from('categories').delete().eq('user_id', userId));
+      }
+      await Promise.all(promises);
       await fetchData();
     } else {
       localStorage.removeItem(STORAGE_KEY);
@@ -382,7 +385,7 @@ export const useStore = (userId?: string) => {
     window.location.reload();
   }, []);
 
-  const addCategory = useCallback(async (c: Omit<Category, 'id'>) => {
+  const addCategory = useCallback(async (c: Omit<Category, 'id'>): Promise<Category | null> => {
     if (userId) {
       const { data, error } = await supabase
         .from('categories')
@@ -392,10 +395,13 @@ export const useStore = (userId?: string) => {
 
       if (!error && data) {
         setState(prev => ({ ...prev, categories: [...prev.categories, data] }));
+        return data;
       }
+      return null;
     } else {
       const newCategory = { ...c, id: `cat_${Math.random().toString(36).substr(2, 9)}` };
       setState(prev => ({ ...prev, categories: [...prev.categories, newCategory] }));
+      return newCategory;
     }
   }, [userId]);
 
@@ -578,16 +584,42 @@ export const useStore = (userId?: string) => {
     }
   }, [userId]);
 
-  const addTransactionsBulk = useCallback((newTransactions: Omit<Transaction, 'id'>[]) => {
-    const transactionsWithIds = newTransactions.map(t => ({
-      ...t,
-      id: crypto.randomUUID()
-    }));
+  const addTransactionsBulk = useCallback(async (newTransactions: Omit<Transaction, 'id'>[], newCategories: Omit<Category, 'id'>[] = []) => {
+    // 1. Map de nomes de categorias para seus IDs finais
+    const categoryIdMap: Record<string, string> = {};
+
+    if (newCategories.length > 0) {
+      for (const cat of newCategories) {
+        // Verifica se a categoria já existe (case-insensitive)
+        const existing = state.categories.find(c => c.name.toLowerCase() === cat.name.toLowerCase() && c.kind === cat.kind);
+        if (existing) {
+          categoryIdMap[cat.name] = existing.id;
+        } else {
+          // Cria a nova categoria e armazena o ID
+          const created = await addCategory(cat);
+          if (created) {
+            categoryIdMap[cat.name] = created.id;
+          }
+        }
+      }
+    }
+
+    // 2. Prepara transações mapeando IDs de categorias sugeridas
+    const transactionsWithIds = newTransactions.map(t => {
+      // Se o CategoryID for o nome de uma categoria sugerida, troca pelo ID real
+      const finalCategoryId = categoryIdMap[t.categoryId] || t.categoryId;
+      return {
+        ...t,
+        categoryId: finalCategoryId,
+        id: crypto.randomUUID()
+      };
+    });
+
     setState(prev => ({
       ...prev,
       transactions: [...prev.transactions, ...transactionsWithIds].sort((a, b) => b.date.localeCompare(a.date))
     }));
-  }, []);
+  }, [addCategory, state.categories]);
 
   return {
     state,

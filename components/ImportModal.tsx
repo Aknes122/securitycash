@@ -7,7 +7,7 @@ import { formatCurrency, formatDate } from '../utils/formatters';
 
 interface ImportModalProps {
   categories: Category[];
-  onImport: (transactions: Omit<Transaction, 'id'>[]) => void;
+  onImport: (transactions: Omit<Transaction, 'id'>[], newCategories: Omit<Category, 'id'>[]) => void;
   onClose: () => void;
 }
 
@@ -15,6 +15,7 @@ const ImportModal: React.FC<ImportModalProps> = ({ categories, onImport, onClose
   const [step, setStep] = useState<'input' | 'processing' | 'review'>('input');
   const [inputText, setInputText] = useState('');
   const [parsedItems, setParsedItems] = useState<Omit<Transaction, 'id'>[]>([]);
+  const [suggestedCategories, setSuggestedCategories] = useState<Omit<Category, 'id'>[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -42,8 +43,9 @@ const ImportModal: React.FC<ImportModalProps> = ({ categories, onImport, onClose
     setStep('processing');
 
     try {
-      const results = await parseBankStatement(inputText, categories);
-      setParsedItems(results);
+      const { transactions, newCategories } = await parseBankStatement(inputText, categories);
+      setParsedItems(transactions);
+      setSuggestedCategories(newCategories || []);
       setStep('review');
     } catch (err: any) {
       setError(err.message || "Erro ao analisar o extrato.");
@@ -58,7 +60,7 @@ const ImportModal: React.FC<ImportModalProps> = ({ categories, onImport, onClose
   };
 
   const handleConfirm = () => {
-    onImport(parsedItems);
+    onImport(parsedItems, suggestedCategories);
     onClose();
   };
 
@@ -179,8 +181,15 @@ const ImportModal: React.FC<ImportModalProps> = ({ categories, onImport, onClose
                            <span className="text-[10px] text-zinc-400 font-bold">{formatDate(item.date)}</span>
                            <span className="w-1 h-1 bg-zinc-300 rounded-full" />
                            <span className="text-[10px] text-zinc-500 font-black uppercase tracking-tighter">
-                             {categories.find(c => c.id === item.categoryId)?.name || 'Geral'}
+                             {categories.find(c => c.id === item.categoryId)?.name || 
+                              suggestedCategories.find(c => c.name === item.categoryId)?.name || 
+                              'Geral'}
                            </span>
+                           {(suggestedCategories.some(c => c.name === item.categoryId)) && (
+                             <span className="px-1.5 py-0.5 bg-amber-500/10 text-amber-600 text-[8px] font-black rounded-full uppercase tracking-widest">
+                               Nova Categoria
+                             </span>
+                           )}
                         </div>
                       </div>
                     </div>

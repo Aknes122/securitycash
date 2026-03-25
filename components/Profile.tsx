@@ -13,7 +13,7 @@ interface ProfileProps {
   onSetPlan: (plan: UserPlan) => void;
   onUpdateUserName: (name: string) => void;
   onSetBaseSalary: (salary: number) => void;
-  onResetData: () => void;
+  onResetData: (includeCategories: boolean) => void;
   onDeleteAccount: () => void;
 }
 
@@ -29,6 +29,7 @@ const Profile: React.FC<ProfileProps> = ({
   onDeleteAccount 
 }) => {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [resetIncludeCategories, setResetIncludeCategories] = useState(false);
   const [showCloseAccountModal, setShowCloseAccountModal] = useState(false);
   const [countdown, setCountdown] = useState(5);
   const [isTimerActive, setIsTimerActive] = useState(false);
@@ -370,11 +371,30 @@ const Profile: React.FC<ProfileProps> = ({
             </div>
             <div className="space-y-2">
               <h3 className="text-xl font-bold">Confirmar Reset?</h3>
-              <p className="text-zinc-500 text-sm">Seus dados atuais serão substituídos pelo seed inicial.</p>
+              <p className="text-zinc-500 text-sm">Seus dados de transações, metas e lembretes serão apagados.</p>
+              
+              <div className="bg-zinc-50 dark:bg-zinc-950 p-4 rounded-2xl border border-zinc-100 dark:border-zinc-800 flex items-center justify-between group cursor-pointer" onClick={() => setResetIncludeCategories(!resetIncludeCategories)}>
+                <div className="text-left">
+                  <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100">Resetar categorias também?</p>
+                  <p className="text-[10px] text-zinc-500">Apaga categorias personalizadas criadas por você.</p>
+                </div>
+                <div className={`w-10 h-6 rounded-full p-1 transition-colors ${resetIncludeCategories ? 'bg-amber-500' : 'bg-zinc-200 dark:bg-zinc-800'}`}>
+                   <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${resetIncludeCategories ? 'translate-x-4' : 'translate-x-0'}`} />
+                </div>
+              </div>
             </div>
             <div className="flex gap-4 pt-4">
-              <button onClick={() => setShowResetConfirm(false)} className="flex-1 py-3 bg-zinc-100 dark:bg-zinc-800 rounded-2xl font-bold">Cancelar</button>
-              <button onClick={() => { onResetData(); setShowResetConfirm(false); }} className="flex-1 py-3 bg-amber-600 text-white rounded-2xl font-bold">Resetar</button>
+              <button onClick={() => { setShowResetConfirm(false); setResetIncludeCategories(false); }} className="flex-1 py-3 bg-zinc-100 dark:bg-zinc-800 rounded-2xl font-bold">Cancelar</button>
+              <button 
+                onClick={() => { 
+                  onResetData(resetIncludeCategories); 
+                  setShowResetConfirm(false); 
+                  setResetIncludeCategories(false); 
+                }} 
+                className="flex-1 py-3 bg-amber-600 text-white rounded-2xl font-bold shadow-lg shadow-amber-600/20 active:scale-95 transition-all"
+              >
+                Resetar
+              </button>
             </div>
           </div>
         </div>
