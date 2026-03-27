@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Transaction, Category, Goal } from '../types';
 import { generateAdvancedDashboardInsight } from '../utils/aiHelpers';
-import { Sparkles, Loader2, BrainCircuit, AlertTriangle, Activity } from 'lucide-react';
+import { Sparkles, Loader2, BrainCircuit, AlertTriangle } from 'lucide-react';
 
 interface Props {
   transactions: Transaction[];
@@ -37,9 +37,9 @@ const DashboardInsights: React.FC<Props> = ({ transactions, categories, goals, f
 
       setLoading(true);
 
-      // --- CÁLCULO DINÂMICO DOS PERÍODOS DE ACORDO COM O FILTRO DO USUÁRIO ---
+      // --- CÁLCULO DINÂMICO DOS PERÍODOS ---
       const now = new Date();
-      let start = new Date(0); // Epoch
+      let start = new Date(0);
       let end = new Date();
       let priorStart = new Date();
       let priorEnd = new Date();
@@ -106,64 +106,93 @@ const DashboardInsights: React.FC<Props> = ({ transactions, categories, goals, f
 
   const score = data?.healthScore || 0;
   
-  // Lógica de Cores Gamificada
-  let colorClass = "from-emerald-600/20 to-teal-500/20 text-emerald-500 border-emerald-500/30";
-  let ringClass = "border-emerald-500";
   let textColorClass = "text-emerald-600 dark:text-emerald-400";
   if (score < 50) {
-    colorClass = "from-rose-600/20 to-red-500/20 text-rose-500 border-rose-500/30";
-    ringClass = "border-rose-500";
     textColorClass = "text-rose-600 dark:text-rose-400";
   } else if (score < 75) {
-    colorClass = "from-amber-500/20 to-yellow-500/20 text-amber-500 border-amber-500/30";
-    ringClass = "border-amber-500";
     textColorClass = "text-amber-600 dark:text-amber-400";
   }
 
   return (
-    <div className={`bg-gradient-to-br ${colorClass} border rounded-[2rem] p-5 sm:p-6 mb-2 shadow-sm relative overflow-hidden flex flex-col md:flex-row items-center gap-6 animate-in slide-in-from-bottom-4 duration-700`}>
-      <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 blur-3xl rounded-full pointer-events-none"></div>
+    <div className="bg-white/40 dark:bg-zinc-900/40 backdrop-blur-3xl border border-zinc-200/50 dark:border-zinc-800/50 rounded-[2.5rem] p-6 mb-6 shadow-xl relative overflow-hidden flex flex-col md:flex-row items-center gap-8 animate-in slide-in-from-bottom-8 duration-1000 group">
       
-      {/* Placar Gamificado Circle */}
-      <div className="relative shrink-0 flex items-center justify-center">
-        {loading ? (
-          <div className="w-20 h-20 rounded-full border-4 border-dashed border-zinc-300 dark:border-zinc-700 flex items-center justify-center animate-spin-slow">
-            <Loader2 size={24} className="text-zinc-400 animate-spin" />
+      {/* Decorative Glows */}
+      <div className={`absolute -left-12 -top-12 w-32 h-32 bg-${score < 50 ? 'rose' : score < 75 ? 'amber' : 'emerald'}-500/10 blur-3xl rounded-full pointer-events-none opacity-50`} />
+      <div className="absolute -right-12 -bottom-12 w-48 h-48 bg-blue-500/5 blur-3xl rounded-full pointer-events-none opacity-30" />
+      
+      {/* Health Score Gauge - Semi-Circle Arc */}
+      <div className="relative shrink-0 flex flex-col items-center justify-center pt-4">
+        <div className="relative w-32 h-20">
+          <svg className="w-full h-full" viewBox="0 0 100 60">
+            {/* Background Track */}
+            <path
+              d="M 10 50 A 40 40 0 0 1 90 50"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="10"
+              strokeLinecap="round"
+              className="text-zinc-100 dark:text-zinc-800/50"
+            />
+            {/* Progress Track */}
+            <path
+              d="M 10 50 A 40 40 0 0 1 90 50"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="10"
+              strokeLinecap="round"
+              strokeDasharray="126"
+              strokeDashoffset={loading ? 126 : 126 - (score / 100) * 126}
+              className={`${textColorClass} transition-all duration-1000 ease-out`}
+            />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-end pb-1 translate-y-1">
+            <span className={`text-3xl font-black ${textColorClass} tracking-tighter`}>{loading ? '--' : score}</span>
+            <span className="text-[9px] uppercase font-black text-zinc-400 tracking-widest mt-[-2px]">Score</span>
           </div>
-        ) : (
-          <div className={`w-20 h-20 rounded-full border-4 ${ringClass} flex flex-col items-center justify-center bg-white dark:bg-zinc-950 shadow-2xl relative z-10 scale-110 md:scale-100 transition-transform`}>
-            <span className="text-[9px] uppercase font-black tracking-tighter text-zinc-400">Score</span>
-            <span className={`text-2xl font-black ${textColorClass} leading-none`}>{score}</span>
-          </div>
-        )}
+        </div>
       </div>
       
-      <div className="flex-1 space-y-3 z-10 text-center md:text-left w-full">
-        <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400 mb-1 flex items-center justify-center md:justify-start gap-2">
-          <BrainCircuit size={14} className="text-blue-500" /> IA Advisor
-        </h4>
+      <div className="flex-1 space-y-4 z-10 text-center md:text-left">
+        <header className="flex items-center justify-center md:justify-start gap-2.5">
+          <div className="p-2 bg-blue-500/10 rounded-xl text-blue-500 shadow-sm group-hover:rotate-12 transition-transform duration-500">
+            <BrainCircuit size={18} />
+          </div>
+          <div className="flex flex-col">
+            <h4 className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-400 dark:text-zinc-500">
+              Personal AI Advisor
+            </h4>
+            <div className="flex items-center gap-1.5">
+               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+               <span className="text-[9px] font-bold text-zinc-400">Live Insights</span>
+            </div>
+          </div>
+        </header>
         
         {loading ? (
-          <div className="flex items-center justify-center md:justify-start gap-2 text-zinc-500 dark:text-zinc-400">
-            <Sparkles size={16} className="animate-pulse" />
-            <span className="text-sm font-medium">Cruzando tendências, anomalias e projeção de metas...</span>
+          <div className="flex items-center justify-center md:justify-start gap-3 text-zinc-500 dark:text-zinc-400 bg-zinc-50/50 dark:bg-zinc-800/30 p-4 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-700">
+            <Loader2 size={18} className="animate-spin text-blue-500" />
+            <span className="text-sm font-bold italic tracking-tight">Analisando o comportamento do seu dinheiro...</span>
           </div>
         ) : (
-          <>
-            <p className="text-sm sm:text-base font-bold text-zinc-800 dark:text-zinc-100 leading-snug">
+          <div className="relative">
+            <p className="text-base sm:text-lg font-bold text-zinc-800 dark:text-zinc-100 leading-relaxed italic">
               "{data?.insight}"
             </p>
             
             {data?.anomaly && (
-              <div className="mt-3 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 flex items-start sm:items-center gap-3">
-                <AlertTriangle size={16} className="text-red-500 shrink-0 mt-0.5 sm:mt-0" />
-                <p className="text-xs text-red-600 dark:text-red-400 font-medium leading-relaxed">
-                  <strong className="uppercase font-black tracking-widest text-[10px]">Alerta de Anomalia: </strong> 
-                  {data.anomaly}
-                </p>
+              <div className="mt-5 bg-rose-500/5 border border-rose-500/20 rounded-[1.5rem] p-4 flex items-start sm:items-center gap-4 animate-in zoom-in duration-500">
+                <div className="p-2 bg-rose-500/10 rounded-xl text-rose-500">
+                  <AlertTriangle size={18} />
+                </div>
+                <div>
+                   <span className="text-[10px] uppercase font-black tracking-widest text-rose-500 block mb-0.5">Alerta Crítico</span>
+                   <p className="text-sm text-rose-600 dark:text-rose-400 font-bold leading-tight">
+                     {data.anomaly}
+                   </p>
+                </div>
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
     </div>

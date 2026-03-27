@@ -186,7 +186,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 transition-colors duration-300">
+    <div className="flex flex-col lg:flex-row min-h-screen bg-[#f8fafc] dark:bg-[#020617] text-zinc-900 dark:text-zinc-100 transition-colors duration-700 font-sans selection:bg-blue-500/30">
       <Sidebar
         currentPage={page}
         setPage={setPage}
@@ -197,8 +197,8 @@ const App: React.FC = () => {
         onScanIA={() => setIsScannerOpen(true)}
       />
 
-      <main className="flex-1 lg:ml-80 p-4 md:p-8 overflow-y-auto min-h-screen pt-20 lg:pt-8">
-        <div className="max-w-6xl mx-auto">
+      <main className="flex-1 lg:ml-72 p-4 md:p-8 lg:p-12 overflow-y-auto min-h-screen pt-24 lg:pt-10 custom-scrollbar scroll-smooth transition-all duration-500">
+        <div className="max-w-7xl mx-auto">
           {page === 'dashboard' && (
             <Dashboard
               state={state}

@@ -1,8 +1,8 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Category, Transaction } from '../types';
 import { parseBankStatement } from '../utils/aiHelpers';
-import { X, Upload, FileText, Loader2, CheckCircle2, AlertCircle, Trash2, ArrowRight, Brain } from 'lucide-react';
+import { X, Upload, FileText, Loader2, CheckCircle2, AlertCircle, Trash2, ArrowRight, Brain, ChevronDown } from 'lucide-react';
 import { formatCurrency, formatDate } from '../utils/formatters';
 
 interface ImportModalProps {
@@ -18,7 +18,19 @@ const ImportModal: React.FC<ImportModalProps> = ({ categories, onImport, onClose
   const [suggestedCategories, setSuggestedCategories] = useState<Omit<Category, 'id'>[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const selectorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (editingIndex !== null && selectorRef.current && !selectorRef.current.contains(event.target as Node)) {
+        setEditingIndex(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [editingIndex]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -57,6 +69,12 @@ const ImportModal: React.FC<ImportModalProps> = ({ categories, onImport, onClose
 
   const removeItem = (index: number) => {
     setParsedItems(prev => prev.filter((_, i) => i !== index));
+    if (editingIndex === index) setEditingIndex(null);
+  };
+
+  const handleCategoryChange = (index: number, newCategoryId: string) => {
+    setParsedItems(prev => prev.map((item, i) => i === index ? { ...item, categoryId: newCategoryId } : item));
+    setEditingIndex(null);
   };
 
   const handleConfirm = () => {
@@ -168,6 +186,27 @@ const ImportModal: React.FC<ImportModalProps> = ({ categories, onImport, onClose
                 </button>
               </div>
 
+              {/* Novas Categorias Summary */}
+              {suggestedCategories.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 px-1">
+                    <Brain size={14} className="text-amber-500" />
+                    <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Novas Categorias Sugeridas</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {suggestedCategories.map((cat, i) => (
+                      <div 
+                        key={i} 
+                        className="px-3 py-1.5 bg-amber-500/5 border border-amber-500/10 rounded-xl flex items-center gap-2 group transition-all hover:bg-amber-500/10"
+                      >
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color || '#f59e0b' }} />
+                        <span className="text-[10px] font-bold text-amber-700 dark:text-amber-500">{cat.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-3">
                 {parsedItems.map((item, idx) => (
                   <div key={idx} className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-100 dark:border-zinc-800 rounded-2xl group transition-all hover:border-zinc-300 dark:hover:border-zinc-700">
@@ -178,18 +217,70 @@ const ImportModal: React.FC<ImportModalProps> = ({ categories, onImport, onClose
                       <div>
                         <p className="text-sm font-bold text-zinc-900 dark:text-white leading-none mb-1">{item.description}</p>
                         <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 relative">
                            <span className="text-[10px] text-zinc-400 font-bold">{formatDate(item.date)}</span>
                            <span className="w-1 h-1 bg-zinc-300 rounded-full" />
-                           <span className="text-[10px] text-zinc-500 font-black uppercase tracking-tighter">
-                             {categories.find(c => c.id === item.categoryId)?.name || 
-                              suggestedCategories.find(c => c.name === item.categoryId)?.name || 
-                              'Geral'}
-                           </span>
-                           {(suggestedCategories.some(c => c.name === item.categoryId)) && (
-                             <span className="px-1.5 py-0.5 bg-amber-500/10 text-amber-600 text-[8px] font-black rounded-full uppercase tracking-widest">
-                               Nova Categoria
-                             </span>
-                           )}
+                           
+                           <div className="relative">
+                             <button 
+                               onClick={() => setEditingIndex(editingIndex === idx ? null : idx)}
+                               className="flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors group/cat"
+                             >
+                               <span className="text-[10px] text-zinc-500 font-black uppercase tracking-tighter group-hover/cat:text-zinc-900 dark:group-hover/cat:text-white transition-colors">
+                                 {categories.find(c => c.id === item.categoryId)?.name || 
+                                  suggestedCategories.find(c => c.name === item.categoryId)?.name || 
+                                  'Geral'}
+                               </span>
+                               {(suggestedCategories.some(c => c.name === item.categoryId)) && (
+                                 <span className="px-1.5 py-0.5 bg-amber-500/10 text-amber-600 text-[8px] font-black rounded-full uppercase tracking-widest">
+                                   Nova
+                                 </span>
+                               )}
+                               <ChevronDown size={10} className={`text-zinc-400 transition-transform ${editingIndex === idx ? 'rotate-180' : ''}`} />
+                             </button>
+
+                             {editingIndex === idx && (
+                               <div 
+                                 ref={selectorRef}
+                                 className="absolute top-full left-0 z-[130] mt-1 w-48 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl p-2 animate-in fade-in zoom-in-95 duration-200"
+                               >
+                                 <div className="max-h-48 overflow-y-auto custom-scrollbar">
+                                   {/* Categorias Sugeridas pela IA */}
+                                   {suggestedCategories.length > 0 && (
+                                     <div className="mb-2">
+                                       <div className="px-2 py-1 text-[8px] font-black text-amber-500 uppercase tracking-[0.2em]">Sugeridas pela IA</div>
+                                       {suggestedCategories.filter(c => c.kind === item.type).map(cat => (
+                                         <button
+                                           key={cat.name}
+                                           onClick={() => handleCategoryChange(idx, cat.name)}
+                                           className={`w-full text-left px-2 py-2 text-[10px] font-bold rounded-xl transition-all flex items-center justify-between ${item.categoryId === cat.name ? 'bg-amber-500/10 text-amber-600' : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800'}`}
+                                         >
+                                           {cat.name}
+                                           {item.categoryId === cat.name && <CheckCircle2 size={10} />}
+                                         </button>
+                                       ))}
+                                     </div>
+                                   )}
+
+                                   {/* Categorias do Sistema */}
+                                   <div>
+                                     <div className="px-2 py-1 text-[8px] font-black text-zinc-400 uppercase tracking-[0.2em]">Categorias do App</div>
+                                     {categories.filter(c => c.kind === item.type).map(cat => (
+                                       <button
+                                         key={cat.id}
+                                         onClick={() => handleCategoryChange(idx, cat.id)}
+                                         className={`w-full text-left px-2 py-2 text-[10px] font-bold rounded-xl transition-all flex items-center justify-between ${item.categoryId === cat.id ? 'bg-blue-500/10 text-blue-600' : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800'}`}
+                                       >
+                                         {cat.name}
+                                         {item.categoryId === cat.id && <CheckCircle2 size={10} />}
+                                       </button>
+                                     ))}
+                                   </div>
+                                 </div>
+                               </div>
+                             )}
+                           </div>
+                        </div>
                         </div>
                       </div>
                     </div>

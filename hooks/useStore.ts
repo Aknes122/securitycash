@@ -23,18 +23,19 @@ export const useStore = (userId?: string) => {
     }
 
     const saved = localStorage.getItem(getKey());
+    const savedPlan = localStorage.getItem(`securitycash_plan_${userId || 'guest'}`);
+    const savedSalary = localStorage.getItem(`securitycash_salary_${userId || 'guest'}`);
+
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         if (!parsed.reminders) parsed.reminders = [];
         if (!parsed.goals) parsed.goals = [];
-        if (!parsed.userPlan) parsed.userPlan = 'basic';
-        if (!parsed.baseSalary) parsed.baseSalary = 3000;
+        if (!parsed.userPlan) parsed.userPlan = (savedPlan as UserPlan) || 'basic';
+        if (!parsed.baseSalary) parsed.baseSalary = savedSalary ? Number(savedSalary) : 3000;
         if (!parsed.filters.startDate) parsed.filters.startDate = '';
         if (!parsed.filters.endDate) parsed.filters.endDate = '';
         if (!parsed.dashboardFilters) parsed.dashboardFilters = { period: '30d', startDate: '', endDate: '' };
-        // Ensure categories are present even if saved data is old/broken, or merge? 
-        // For now trusting saved, but if categories missing could fallback.
         if (!parsed.categories || parsed.categories.length === 0) parsed.categories = SEED_CATEGORIES;
         return parsed;
       } catch (e) {
@@ -42,13 +43,12 @@ export const useStore = (userId?: string) => {
       }
     }
 
-    // New User (or no data) -> EMPTY SEEDS
     return {
-      transactions: [], // Empty for new users
-      categories: SEED_CATEGORIES, // Keep default categories
-      reminders: [], // Empty
-      goals: [], // Empty
-      userPlan: 'basic',
+      transactions: [],
+      categories: SEED_CATEGORIES,
+      reminders: [],
+      goals: [],
+      userPlan: (savedPlan as UserPlan) || 'basic',
       filters: {
         period: '30d',
         categoryId: 'all',
@@ -63,7 +63,7 @@ export const useStore = (userId?: string) => {
         endDate: ''
       },
       userName: '',
-      baseSalary: 3000
+      baseSalary: savedSalary ? Number(savedSalary) : 3000
     };
   };
 
@@ -174,18 +174,17 @@ export const useStore = (userId?: string) => {
         { data: transactions },
         { data: reminders },
         { data: goals },
-        { data: categories }
+        { data: categories },
+        { data: userProfile }
       ] = await Promise.all([
         supabase.from('transactions').select('*').order('date', { ascending: false }),
         supabase.from('reminders').select('*').order('due_date', { ascending: true }),
         supabase.from('goals').select('*'),
-        supabase.from('categories').select('*')
+        supabase.from('categories').select('*'),
+        supabase.from('profiles').select('plan, base_salary').eq('id', userId).maybeSingle()
       ]);
 
       setState(prev => {
-        // Se as categorias do banco estiverem vazias MAS o usuário já migrou (passo acima),
-        // significa que ele deletou tudo. Não devemos voltar para SEED_CATEGORIES.
-        // A menos que seja um usuário REALMENTE novo sem nada em lugar nenhum (profile null ou has_migrated false).
         const finalCategories = (categories && categories.length > 0)
           ? categories
           : ((profile?.has_migrated || !localStorage.getItem(getKey())) ? [] : SEED_CATEGORIES);
@@ -205,7 +204,9 @@ export const useStore = (userId?: string) => {
             targetAmount: Number(g.target_amount),
             currentAmount: Number(g.current_amount)
           })) : [],
-          categories: finalCategories
+          categories: finalCategories,
+          userPlan: userProfile?.plan || prev.userPlan,
+          baseSalary: userProfile?.base_salary || prev.baseSalary
         };
       });
     } catch (e) {
@@ -233,11 +234,19 @@ export const useStore = (userId?: string) => {
 
   const setPlan = useCallback((plan: UserPlan) => {
     setState(prev => ({ ...prev, userPlan: plan }));
-  }, []);
+    localStorage.setItem(`securitycash_plan_${userId || 'guest'}`, plan);
+    if (userId) {
+      supabase.from('profiles').upsert({ id: userId, plan }).then();
+    }
+  }, [userId]);
 
   const setBaseSalary = useCallback((salary: number) => {
     setState(prev => ({ ...prev, baseSalary: salary }));
-  }, []);
+    localStorage.setItem(`securitycash_salary_${userId || 'guest'}`, salary.toString());
+    if (userId) {
+      supabase.from('profiles').upsert({ id: userId, base_salary: salary }).then();
+    }
+  }, [userId]);
 
   const setUserName = useCallback((name: string) => {
     setState(prev => {
@@ -615,10 +624,32 @@ export const useStore = (userId?: string) => {
       };
     });
 
-    setState(prev => ({
-      ...prev,
-      transactions: [...prev.transactions, ...transactionsWithIds].sort((a, b) => b.date.localeCompare(a.date))
-    }));
+    if (userId) {
+      const dbTransactions = transactionsWithIds.map(t => {
+        const dbData = {
+          ...t,
+          category_id: t.categoryId,
+          user_id: userId
+        };
+        delete (dbData as any).categoryId;
+        return dbData;
+      });
+
+      const { error } = await supabase.from('transactions').insert(dbTransactions);
+      if (error) {
+        console.error("Erro ao salvar transações em lote", error);
+      } else {
+        setState(prev => ({
+          ...prev,
+          transactions: [...prev.transactions, ...transactionsWithIds].sort((a, b) => b.date.localeCompare(a.date))
+        }));
+      }
+    } else {
+      setState(prev => ({
+        ...prev,
+        transactions: [...prev.transactions, ...transactionsWithIds].sort((a, b) => b.date.localeCompare(a.date))
+      }));
+    }
   }, [addCategory, state.categories]);
 
   return {

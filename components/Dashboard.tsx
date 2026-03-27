@@ -27,7 +27,9 @@ import {
   Bar,
   PieChart,
   Pie,
-  Cell
+  Cell,
+  AreaChart,
+  Area
 } from 'recharts';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { filterTransactions, calculateKPIs, getDailyChartData, getCategoryChartData } from '../utils/calculations';
@@ -104,35 +106,35 @@ const Dashboard: React.FC<DashboardProps> = ({ state, isLoading, onUpdateFilters
   };
 
   return (
-    <div className="space-y-8 pb-12 transition-all duration-500 animate-in fade-in">
+    <div className="space-y-10 pb-12 transition-all duration-700 animate-in fade-in slide-in-from-bottom-4">
       
       {/* Hero Section */}
-      <header className="flex flex-col gap-1">
-        <h2 className="text-3xl font-black tracking-tight text-zinc-900 dark:text-white flex items-center gap-3">
+      <header className="flex flex-col gap-1 relative">
+        <h2 className="text-4xl font-black tracking-tight text-zinc-900 dark:text-white flex items-center gap-4">
           {greeting()}! 
-          <span className="text-blue-500 animate-pulse">👋</span>
+          <span className="text-blue-500 animate-bounce">👋</span>
         </h2>
-        <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
-           Aqui está o resumo da sua jornada financeira.
+        <p className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 max-w-xl leading-relaxed">
+           Transformando seus dados em poder financeiro. Aqui está o que preparamos para você hoje.
         </p>
       </header>
 
-      {/* Central de Ações Rápidas (HUB) */}
-      <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {/* Central de Ações Rápidas (HUB) - Premium Glass Design */}
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         {[
           state.userPlan === 'pro' 
             ? { 
                 label: 'Lançamento por Áudio', 
                 sub: 'Grave e deixe a IA lançar', 
                 icon: Mic, 
-                color: 'indigo', 
+                color: 'blue', 
                 action: onAddRecordVoice 
               }
             : { 
                 label: 'Novo Registro', 
                 sub: 'Lançamento manual rápido', 
                 icon: Calendar, 
-                color: 'blue', 
+                color: 'zinc', 
                 action: onAddRecord 
               },
           { 
@@ -154,21 +156,26 @@ const Dashboard: React.FC<DashboardProps> = ({ state, isLoading, onUpdateFilters
           <button
             key={i}
             onClick={item.action}
-            className={`group flex flex-col items-start p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-[2rem] shadow-sm hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 relative overflow-hidden`}
+            className="group relative flex flex-col items-start p-8 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-xl border border-zinc-200/50 dark:border-zinc-800/50 rounded-[2.5rem] shadow-sm hover:shadow-2xl hover:shadow-zinc-500/10 dark:hover:shadow-white/5 hover:-translate-y-1 active:scale-[0.98] transition-all duration-500 overflow-hidden text-left"
           >
-            <div className={`mb-4 w-12 h-12 rounded-xl flex items-center justify-center bg-${item.color}-500/10 text-${item.color}-500 group-hover:bg-${item.color}-500 group-hover:text-white transition-all`}>
-              <item.icon size={24} />
-            </div>
-            <div className="text-left">
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-zinc-900 dark:text-white text-sm">{item.label}</span>
-                {item.isPro && <Sparkles size={12} className="text-amber-500 animate-pulse" />}
-              </div>
-              <p className="text-[10px] text-zinc-400 font-medium mt-1 leading-tight">{item.sub}</p>
+            {/* Background Glow */}
+            <div className={`absolute -right-8 -bottom-8 w-32 h-32 bg-${item.color}-500/5 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700`} />
+            
+            <div className={`mb-6 w-14 h-14 rounded-2xl flex items-center justify-center bg-white dark:bg-zinc-800 shadow-lg border border-zinc-100 dark:border-zinc-700 group-hover:bg-zinc-900 dark:group-hover:bg-white group-hover:text-white dark:group-hover:text-zinc-900 transition-all duration-500`}>
+              <item.icon size={28} className={`text-${item.color === 'zinc' ? 'blue' : item.color}-500`} />
             </div>
             
-            {/* Efeito Visual Sutil */}
-            <div className={`absolute -right-4 -bottom-4 w-20 h-20 bg-${item.color}-500/5 rounded-full group-hover:scale-150 transition-transform blur-2xl`} />
+            <div className="relative z-10">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="font-black text-zinc-900 dark:text-white text-base tracking-tight">{item.label}</span>
+                {item.isPro && (
+                  <div className="px-1.5 py-0.5 bg-amber-500/10 rounded-md">
+                    <Sparkles size={10} className="text-amber-500" />
+                  </div>
+                )}
+              </div>
+              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium leading-normal">{item.sub}</p>
+            </div>
           </button>
         ))}
       </section>
@@ -183,24 +190,53 @@ const Dashboard: React.FC<DashboardProps> = ({ state, isLoading, onUpdateFilters
         />
       )}
 
-      {/* Primary Metrics Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Primary Metrics Grid - Clean & Minimalist */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { label: 'Entradas', value: kpis.totalIncomes, icon: ArrowUpCircle, color: 'text-emerald-500', bg: 'bg-emerald-500/5' },
-          { label: 'Saídas', value: kpis.totalExpenses, icon: ArrowDownCircle, color: 'text-rose-500', bg: 'bg-rose-500/5' },
-          { label: 'Saldo Atual', value: kpis.totalIncomes - kpis.totalExpenses, icon: TrendingDown, color: 'text-blue-500', bg: 'bg-blue-500/5' },
-          { label: 'Top Categoria', value: topCategoryName, icon: Tag, color: 'text-zinc-500', bg: 'bg-zinc-500/5', isCurrency: false },
+          { label: 'Entradas', value: kpis.totalIncomes, icon: ArrowUpCircle, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+          { label: 'Saídas', value: kpis.totalExpenses, icon: ArrowDownCircle, color: 'text-rose-500', bg: 'bg-rose-500/10' },
+          { label: 'Saldo Atual', value: kpis.totalIncomes - kpis.totalExpenses, icon: TrendingDown, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+          { label: 'Top Categoria', value: topCategoryName, icon: Tag, color: 'text-zinc-500', bg: 'bg-zinc-100 dark:bg-zinc-800', isCurrency: false },
         ].map((item, i) => (
-          <div key={i} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-5 rounded-[1.75rem] shadow-sm flex flex-col justify-between group hover:border-zinc-400 transition-all">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[9px] font-black uppercase text-zinc-400 tracking-[0.15em]">{item.label}</span>
-              <div className={`p-1.5 ${item.bg} rounded-lg ${item.color}`}>
-                <item.icon size={16} />
+          <div key={i} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 rounded-[2rem] shadow-sm flex flex-col justify-between group hover:border-blue-500/30 transition-all duration-300 relative overflow-hidden">
+            <div className="flex items-center justify-between mb-4 relative z-10">
+              <span className="text-[10px] font-black uppercase text-zinc-400 dark:text-zinc-500 tracking-[0.2em]">{item.label}</span>
+              <div className={`p-2 ${item.bg} rounded-xl ${item.color} group-hover:scale-110 transition-transform`}>
+                <item.icon size={18} />
               </div>
             </div>
-            <p className="text-xl sm:text-2xl font-black text-zinc-900 dark:text-white truncate">
-              {item.isCurrency === false ? item.value : formatCurrency(item.value as number)}
-            </p>
+            
+            <div className="flex items-end justify-between relative z-10 gap-2">
+              <p className="text-2xl sm:text-3xl font-black text-zinc-900 dark:text-white truncate tracking-tighter">
+                {item.isCurrency === false ? item.value : formatCurrency(item.value as number)}
+              </p>
+              
+              {item.label === 'Saldo Atual' && (
+                <div className="w-12 h-12 shrink-0">
+                  <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
+                    <path
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      className="text-zinc-100 dark:text-zinc-800"
+                    />
+                    <path
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      strokeDasharray="100, 100"
+                      strokeDashoffset={100 - (Math.max(0, Math.min(100, ((kpis.totalIncomes - kpis.totalExpenses) / (kpis.totalIncomes || 1)) * 100)))}
+                      className="text-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"
+                    />
+                  </svg>
+                </div>
+              )}
+            </div>
+            
+            {/* Subtle Gradient Glow */}
+            <div className={`absolute -right-4 -bottom-4 w-16 h-16 bg-blue-500/5 blur-2xl rounded-full group-hover:bg-blue-500/10 transition-colors pointer-events-none`} />
           </div>
         ))}
       </div>
@@ -225,33 +261,65 @@ const Dashboard: React.FC<DashboardProps> = ({ state, isLoading, onUpdateFilters
           </header>
           <div className="h-[250px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={dailyData}>
+              <AreaChart data={dailyData}>
+                <defs>
+                  <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#88888811" />
-                <XAxis dataKey="date" fontSize={10} tickFormatter={(v) => v.split('-')[2]} axisLine={false} tickLine={false} />
-                <YAxis hide />
+                <XAxis 
+                  dataKey="date" 
+                  fontSize={10} 
+                  tickFormatter={(v) => v.split('-')[2]} 
+                  axisLine={false} 
+                  tickLine={false}
+                  tick={{ fill: '#888888' }}
+                />
+                <YAxis hide domain={['auto', 'auto']} />
                 <Tooltip
-                  contentStyle={{ backgroundColor: theme === 'dark' ? '#18181b' : '#ffffff', borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}
+                  contentStyle={{ 
+                    backgroundColor: theme === 'dark' ? '#18181b' : '#ffffff', 
+                    borderRadius: '16px', 
+                    border: '1px solid ' + (theme === 'dark' ? '#27272a' : '#f4f4f5'), 
+                    boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' 
+                  }}
+                  itemStyle={{ fontWeight: 'bold' }}
+                  labelStyle={{ display: 'none' }}
                   formatter={(v: number) => [formatCurrency(v), 'Gasto']}
                 />
-                <Line type="step" dataKey="amount" stroke="#3b82f6" strokeWidth={4} dot={{ r: 4, fill: '#3b82f6', strokeWidth: 0 }} activeDot={{ r: 6 }} />
-              </LineChart>
+                <Area 
+                  type="monotone" 
+                  dataKey="amount" 
+                  stroke="#3b82f6" 
+                  strokeWidth={4} 
+                  fillOpacity={1} 
+                  fill="url(#colorAmount)"
+                  dot={{ r: 4, fill: '#3b82f6', strokeWidth: 0 }} 
+                  activeDot={{ r: 6, fill: '#3b82f6', stroke: '#3b82f6', strokeWidth: 8, strokeOpacity: 0.2 }} 
+                />
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         {/* Top Categorias */}
-        <div className="lg:col-span-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-8 rounded-[2.5rem] shadow-sm flex flex-col">
+        <div className="lg:col-span-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-8 rounded-[2.5rem] shadow-sm flex flex-col group hover:border-blue-500/30 transition-all duration-300">
           <h3 className="text-xs font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-8">Top Categorias</h3>
-          <div className="flex-1 space-y-5">
+          <div className="flex-1 space-y-6">
             {categoryData.slice(0, 4).map((cat, i) => (
-              <div key={i} className="space-y-1.5">
-                <div className="flex justify-between items-center text-xs font-bold">
-                  <span className="text-zinc-600 dark:text-zinc-400">{cat.name}</span>
-                  <span className="text-zinc-900 dark:text-zinc-100">{formatCurrency(cat.value)}</span>
+              <div key={i} className="space-y-2 group/item">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+                    <span className="text-[11px] font-bold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">{cat.name}</span>
+                  </div>
+                  <span className="text-xs font-black text-zinc-900 dark:text-white">{formatCurrency(cat.value)}</span>
                 </div>
-                <div className="h-1.5 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                <div className="h-2 w-full bg-zinc-100 dark:bg-zinc-800/50 rounded-full overflow-hidden">
                   <div 
-                    className="h-full bg-blue-500 rounded-full transition-all duration-1000" 
+                    className="h-full bg-gradient-to-r from-blue-600 to-blue-400 rounded-full transition-all duration-1000 ease-out group-hover/item:brightness-110" 
                     style={{ width: `${Math.min((cat.value / (kpis.totalExpenses || 1)) * 100, 100)}%` }} 
                   />
                 </div>

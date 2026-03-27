@@ -72,17 +72,17 @@ const Sidebar: React.FC<SidebarProps> = ({
   return (
     <>
       {/* Desktop Sidebar - Border suavizada e largura fixa clara */}
-      <aside className="hidden lg:flex w-72 flex-shrink-0 border-r border-zinc-200/50 dark:border-zinc-800/50 flex-col h-screen fixed left-0 top-0 bg-white dark:bg-zinc-950 z-50 transition-colors duration-300">
-        <div className="p-10 pb-8">
+      <aside className="hidden lg:flex w-72 flex-shrink-0 border-r border-zinc-200/50 dark:border-zinc-800/20 flex-col h-screen fixed left-0 top-0 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-2xl z-50 transition-all duration-500">
+        <div className="p-10 pb-6">
           <button
             onClick={() => handleNavigate('dashboard')}
-            className="text-left outline-none"
+            className="text-left outline-none group"
           >
             <Logo />
           </button>
         </div>
 
-        <nav className="flex-1 px-6 py-4 space-y-2 overflow-y-auto">
+        <nav className="flex-1 px-6 py-4 space-y-1.5 overflow-y-auto custom-scrollbar">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentPage === item.id;
@@ -90,57 +90,66 @@ const Sidebar: React.FC<SidebarProps> = ({
               <button
                 key={item.id}
                 onClick={() => handleNavigate(item.id as Page)}
-                className={`w-full flex items-center gap-4 px-4 py-4 rounded-2xl transition-all duration-300 ${isActive
-                  ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold shadow-xl shadow-black/10 dark:shadow-white/5'
-                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-900'
+                className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 group ${isActive
+                  ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold shadow-2xl shadow-zinc-500/20 dark:shadow-white/10 scale-[1.02]'
+                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-900/50'
                   }`}
               >
-                <Icon size={20} className={isActive ? 'text-blue-500' : ''} />
-                <span className="text-sm">{item.label}</span>
+                <div className={`transition-colors duration-300 ${isActive ? 'text-blue-500' : 'group-hover:text-blue-500'}`}>
+                  <Icon size={20} />
+                </div>
+                <span className="text-sm tracking-tight">{item.label}</span>
+                {isActive && (
+                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+                )}
               </button>
             );
           })}
         </nav>
 
-        <div className="p-6 border-t border-zinc-200 dark:border-zinc-800 space-y-1">
+        <div className="p-6 border-t border-zinc-200/50 dark:border-zinc-800/50 space-y-2">
           {userPlan === 'pro' && (
             <button
               onClick={onScanIA}
-              className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-lg shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all mb-4"
+              className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-600 text-white font-bold shadow-xl shadow-blue-500/20 hover:shadow-2xl hover:shadow-blue-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all mb-4 group"
             >
-              <div className="relative">
+              <div className="relative p-2 bg-white/10 rounded-xl group-hover:rotate-12 transition-transform">
                 <Camera size={20} />
-                <Sparkles size={12} className="absolute -top-2 -right-2 text-amber-300 animate-pulse" />
+                <Sparkles size={12} className="absolute -top-1 -right-1 text-amber-300 animate-pulse" />
               </div>
-              <span className="text-sm">Scan IA com Foto</span>
+              <span className="text-sm tracking-tight">AI Smart Scan</span>
             </button>
           )}
 
-          <button
-            onClick={toggleTheme}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-all mb-2"
-          >
-            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-            <span className="text-sm font-medium">{theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}</span>
-          </button>
+          <div className="grid grid-cols-2 gap-2 mb-2">
+            <button
+              onClick={toggleTheme}
+              className="flex flex-col items-center justify-center gap-2 p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200/50 dark:border-zinc-800/50 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
+              title={theme === 'dark' ? 'Mudar para Modo Claro' : 'Mudar para Modo Escuro'}
+            >
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+              <span className="text-[10px] font-bold uppercase tracking-widest">{theme === 'dark' ? 'Light' : 'Dark'}</span>
+            </button>
 
-          <button
-            onClick={() => handleNavigate('profile')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${currentPage === 'profile'
-              ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold'
-              : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-900'
-              }`}
-          >
-            <User size={18} />
-            <span className="text-sm font-medium">Meu Perfil</span>
-          </button>
+            <button
+              onClick={() => handleNavigate('profile')}
+              className={`flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border transition-all ${currentPage === 'profile'
+                ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-transparent shadow-lg'
+                : 'bg-zinc-50 dark:bg-zinc-900/50 border-zinc-200/50 dark:border-zinc-800/50 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                }`}
+              title="Meu Perfil"
+            >
+              <User size={18} />
+              <span className="text-[10px] font-bold uppercase tracking-widest">Perfil</span>
+            </button>
+          </div>
 
           <button
             onClick={onLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all"
+            className="w-full flex items-center justify-center gap-3 px-4 py-3.5 rounded-2xl text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/5 border border-transparent hover:border-rose-500/20 transition-all duration-300"
           >
             <LogOut size={18} />
-            <span className="text-sm font-medium">Sair</span>
+            <span className="text-sm font-bold tracking-tight">Sair da Conta</span>
           </button>
         </div>
       </aside>
