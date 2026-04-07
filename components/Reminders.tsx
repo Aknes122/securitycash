@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { AppState, Reminder } from '../types';
-import { Bell, Plus, Calendar, CheckCircle2, Circle, Trash2, Edit2, AlertCircle, X, ChevronRight } from 'lucide-react';
+import { Bell, Plus, Calendar, CheckCircle2, Circle, Trash2, Edit2, AlertCircle, X, ChevronRight, DollarSign } from 'lucide-react';
 import { formatCurrency, formatDate } from '../utils/formatters';
 
 interface RemindersProps {
@@ -71,12 +71,15 @@ const Reminders: React.FC<RemindersProps> = ({ state, onAddReminder, onUpdateRem
     now.setHours(0, 0, 0, 0);
 
     const pendingCount = state.reminders.filter(r => r.status === 'pendente').length;
+    const pendingTotal = state.reminders
+      .filter(r => r.status === 'pendente')
+      .reduce((sum, r) => sum + r.amount, 0);
     const overdueCount = state.reminders.filter(r => {
       const d = new Date(r.dueDate);
       return r.status === 'pendente' && d < now;
     }).length;
 
-    return { pendingCount, overdueCount };
+    return { pendingCount, overdueCount, pendingTotal };
   }, [state.reminders]);
 
   return (
@@ -98,7 +101,7 @@ const Reminders: React.FC<RemindersProps> = ({ state, onAddReminder, onUpdateRem
         </button>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 rounded-2xl flex items-center justify-between shadow-sm dark:shadow-none text-zinc-900 dark:text-zinc-100">
           <div className="space-y-1">
             <span className="text-xs text-zinc-500 dark:text-zinc-400 uppercase font-semibold">Pendentes</span>
@@ -112,6 +115,13 @@ const Reminders: React.FC<RemindersProps> = ({ state, onAddReminder, onUpdateRem
             <p className="text-3xl font-bold text-rose-500">{stats.overdueCount}</p>
           </div>
           <AlertCircle size={32} className="text-rose-500/10 dark:text-rose-500/20" />
+        </div>
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 rounded-2xl flex items-center justify-between shadow-sm dark:shadow-none text-zinc-900 dark:text-zinc-100">
+          <div className="space-y-1">
+            <span className="text-xs text-emerald-500 uppercase font-semibold">Total a Pagar</span>
+            <p className="text-3xl font-bold text-emerald-500">{formatCurrency(stats.pendingTotal)}</p>
+          </div>
+          <DollarSign size={32} className="text-emerald-500/10 dark:text-emerald-500/20" />
         </div>
       </div>
 
