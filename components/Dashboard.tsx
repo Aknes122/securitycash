@@ -13,7 +13,9 @@ import {
   Camera,
   Bell,
   FileText,
-  Mic
+  Mic,
+  CheckCircle2,
+  Clock
 } from 'lucide-react';
 import {
   LineChart,
@@ -103,6 +105,20 @@ const Dashboard: React.FC<DashboardProps> = ({ state, isLoading, onUpdateFilters
     const g = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
     const namePart = state.userName ? `, ${state.userName.split(' ')[0]}` : "";
     return `${g}${namePart}`;
+  };
+
+  const getDaysRemainingText = (dateStr: string) => {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const due = new Date(dateStr);
+    due.setHours(0, 0, 0, 0);
+    const diffTime = due.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return "Hoje";
+    if (diffDays === 1) return "Amanhã";
+    if (diffDays < 0) return "Atrasado";
+    return `${diffDays} dias`;
   };
 
   return (
@@ -330,66 +346,142 @@ const Dashboard: React.FC<DashboardProps> = ({ state, isLoading, onUpdateFilters
       </div>
 
       {/* Goals & Reminders Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         
         {/* Metas */}
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-8 rounded-[2.5rem] shadow-sm space-y-6">
-          <div className="flex justify-between items-center">
-            <h3 className="text-xs font-black text-zinc-400 uppercase tracking-widest">Suas Metas</h3>
-            <button onClick={onGoToGoals} className="p-2 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-full transition-colors">
-              <ChevronRight size={18} className="text-zinc-400" />
+        <div className="bg-white/50 dark:bg-zinc-900/50 backdrop-blur-xl border border-zinc-200/50 dark:border-zinc-800/50 p-8 rounded-[3rem] shadow-sm space-y-8 relative overflow-hidden group">
+          {/* Decorative Glow */}
+          <div className="absolute -right-8 -top-8 w-32 h-32 bg-emerald-500/5 blur-3xl rounded-full" />
+          
+          <div className="flex justify-between items-center relative z-10">
+            <div className="space-y-1">
+              <h3 className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.3em]">Suas Metas</h3>
+              <p className="text-xs font-bold text-zinc-500">Progresso para seus sonhos</p>
+            </div>
+            <button 
+              onClick={onGoToGoals} 
+              className="p-2.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-500 dark:text-zinc-400 rounded-2xl transition-all duration-300 group-hover:translate-x-1"
+            >
+              <ChevronRight size={18} />
             </button>
           </div>
-          <div className="space-y-4">
+
+          <div className="space-y-5 relative z-10">
             {state.goals.length === 0 ? (
-              <p className="text-xs text-zinc-500 italic">Nenhuma meta ativa no momento.</p>
+              <div className="py-10 text-center space-y-4">
+                <div className="w-16 h-16 bg-zinc-100 dark:bg-zinc-800/50 rounded-3xl flex items-center justify-center mx-auto text-zinc-300 dark:text-zinc-600">
+                  <Target size={32} />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-bold text-zinc-800 dark:text-zinc-200">Sem metas ativas</p>
+                  <p className="text-[11px] text-zinc-500">Que tal planejar seu próximo objetivo?</p>
+                </div>
+              </div>
             ) : (
-              state.goals.slice(0, 2).map(goal => (
-                <div key={goal.id} className="p-4 bg-zinc-50 dark:bg-zinc-950/50 rounded-2xl border border-zinc-100 dark:border-zinc-800 flex items-center gap-4">
-                  <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-500">
-                    <Target size={20} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-xs font-bold text-zinc-900 dark:text-white truncate">{goal.title}</h4>
-                    <div className="w-full h-1 bg-zinc-200 dark:bg-zinc-800 rounded-full mt-1.5 overflow-hidden">
-                      <div 
-                        className="h-full bg-emerald-500 rounded-full" 
-                        style={{ width: `${Math.min((goal.currentAmount / goal.targetAmount) * 100, 100)}%` }} 
-                      />
+              state.goals.slice(0, 2).map(goal => {
+                const percent = Math.min((goal.currentAmount / goal.targetAmount) * 100, 100);
+                const remaining = goal.targetAmount - goal.currentAmount;
+
+                return (
+                  <div key={goal.id} className="p-5 bg-white dark:bg-zinc-950/40 rounded-[2rem] border border-zinc-100 dark:border-zinc-800/50 shadow-sm space-y-4 group/item hover:border-emerald-500/30 transition-all duration-500">
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-500 group-hover/item:scale-110 transition-transform duration-500">
+                          <Target size={24} />
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="text-sm font-black text-zinc-900 dark:text-white truncate tracking-tight">{goal.title}</h4>
+                          <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{percent.toFixed(0)}% concluído</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-black text-zinc-900 dark:text-white">{formatCurrency(goal.currentAmount)}</p>
+                        <p className="text-[9px] font-bold text-zinc-400">Total: {formatCurrency(goal.targetAmount)}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                       <div className="h-3 w-full bg-zinc-100 dark:bg-zinc-800/50 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 rounded-full transition-all duration-1000 ease-out" 
+                          style={{ width: `${percent}%` }} 
+                        />
+                      </div>
+                      <div className="flex justify-between items-center text-[10px] font-bold">
+                        <span className="text-zinc-400">Faltam {formatCurrency(Math.max(0, remaining))}</span>
+                        <span className="text-emerald-500 tracking-tighter">ALCANCE SUA META</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
 
         {/* Lembretes Próximos */}
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-8 rounded-[2.5rem] shadow-sm space-y-6">
-          <div className="flex justify-between items-center">
-            <h3 className="text-xs font-black text-zinc-400 uppercase tracking-widest">Próximas Contas</h3>
-            <button onClick={onGoToReminders} className="p-2 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-full transition-colors">
-              <ChevronRight size={18} className="text-zinc-400" />
+        <div className="bg-white/50 dark:bg-zinc-900/50 backdrop-blur-xl border border-zinc-200/50 dark:border-zinc-800/50 p-8 rounded-[3rem] shadow-sm space-y-8 relative overflow-hidden group">
+          {/* Decorative Glow */}
+          <div className="absolute -right-8 -top-8 w-32 h-32 bg-blue-500/5 blur-3xl rounded-full" />
+
+          <div className="flex justify-between items-center relative z-10">
+            <div className="space-y-1">
+              <h3 className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.3em]">Próximas Contas</h3>
+              <p className="text-xs font-bold text-zinc-500">Suas obrigações em dia</p>
+            </div>
+            <button 
+              onClick={onGoToReminders} 
+              className="p-2.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-500 dark:text-zinc-400 rounded-2xl transition-all duration-300 group-hover:translate-x-1"
+            >
+              <ChevronRight size={18} />
             </button>
           </div>
-          <div className="space-y-3">
+
+          <div className="space-y-4 relative z-10">
              {upcomingReminders.length === 0 ? (
-               <p className="text-xs text-zinc-500 italic">Tudo em dia!</p>
+                <div className="py-10 text-center space-y-4">
+                  <div className="w-16 h-16 bg-zinc-100 dark:bg-zinc-800/50 rounded-3xl flex items-center justify-center mx-auto text-emerald-500">
+                    <CheckCircle2 size={32} />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-bold text-zinc-800 dark:text-zinc-200">Tudo em dia!</p>
+                    <p className="text-[11px] text-zinc-500">Nenhum pagamento pendente no radar.</p>
+                  </div>
+                </div>
              ) : (
-               upcomingReminders.map(rem => (
-                 <div key={rem.id} className="flex justify-between items-center p-3 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 rounded-xl transition-colors">
-                   <div className="min-w-0">
-                     <p className="text-xs font-bold text-zinc-900 dark:text-white truncate">{rem.title}</p>
-                     <p className="text-[10px] text-zinc-400 font-medium">{formatDate(rem.dueDate)}</p>
+               upcomingReminders.map(rem => {
+                 const daysLeft = getDaysRemainingText(rem.dueDate);
+                 const isUrgent = daysLeft === "Hoje" || daysLeft === "Atrasado";
+
+                 return (
+                   <div key={rem.id} className="flex justify-between items-center p-5 bg-white dark:bg-zinc-950/40 rounded-3xl border border-zinc-100 dark:border-zinc-800/50 hover:border-blue-500/30 transition-all duration-500 group/rem">
+                     <div className="flex items-center gap-4 min-w-0">
+                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isUrgent ? 'bg-rose-500/10 text-rose-500' : 'bg-blue-500/10 text-blue-500'}`}>
+                         <Clock size={20} />
+                       </div>
+                       <div className="min-w-0">
+                         <p className="text-sm font-black text-zinc-900 dark:text-white truncate tracking-tight">{rem.title}</p>
+                         <div className="flex items-center gap-2">
+                            <p className="text-[10px] text-zinc-400 font-bold">{formatDate(rem.dueDate)}</p>
+                            <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-tighter ${isUrgent ? 'bg-rose-500/10 text-rose-500' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500'}`}>
+                              {daysLeft}
+                            </span>
+                         </div>
+                       </div>
+                     </div>
+                     <div className="text-right shrink-0 ml-4">
+                       <span className="text-base font-black text-zinc-900 dark:text-white">{formatCurrency(rem.amount)}</span>
+                     </div>
                    </div>
-                   <span className="text-sm font-black text-zinc-900 dark:text-white shrink-0 ml-4">{formatCurrency(rem.amount)}</span>
-                 </div>
-               ))
+                 );
+               })
              )}
           </div>
         </div>
 
       </div>
+
+
     </div>
   );
 };
