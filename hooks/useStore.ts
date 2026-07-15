@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { AppState, Transaction, Filters, Category, UserPlan, Reminder, Goal } from '../types';
+import { AppState, Transaction, Filters, Category, UserPlan, Reminder, Goal, Installment } from '../types';
 import { SEED_CATEGORIES, SEED_TRANSACTIONS, SEED_REMINDERS, SEED_GOALS, STORAGE_KEY } from '../constants';
 import { supabase } from '../lib/supabase';
 
@@ -8,12 +8,23 @@ export const useStore = (userId?: string) => {
   const getKey = () => userId ? `securitycash_data_${userId}` : STORAGE_KEY;
 
   const getInitialState = (): AppState => {
+    const savedInstallments = localStorage.getItem(`securitycash_installments_${userId || 'guest'}`);
+    let loadedInstallments: Installment[] = [];
+    if (savedInstallments) {
+      try {
+        loadedInstallments = JSON.parse(savedInstallments);
+      } catch (e) {
+        console.error("Failed to load local storage installments", e);
+      }
+    }
+
     if (!userId) {
       return {
         transactions: [],
         categories: SEED_CATEGORIES,
         reminders: [],
         goals: [],
+        installments: loadedInstallments,
         userPlan: 'basic',
         userName: '',
         baseSalary: 3000,
@@ -31,6 +42,7 @@ export const useStore = (userId?: string) => {
         const parsed = JSON.parse(saved);
         if (!parsed.reminders) parsed.reminders = [];
         if (!parsed.goals) parsed.goals = [];
+        parsed.installments = loadedInstallments;
         if (!parsed.userPlan) parsed.userPlan = (savedPlan as UserPlan) || 'basic';
         if (!parsed.baseSalary) parsed.baseSalary = savedSalary ? Number(savedSalary) : 3000;
         if (!parsed.filters.startDate) parsed.filters.startDate = '';
@@ -48,6 +60,7 @@ export const useStore = (userId?: string) => {
       categories: SEED_CATEGORIES,
       reminders: [],
       goals: [],
+      installments: loadedInstallments,
       userPlan: (savedPlan as UserPlan) || 'basic',
       filters: {
         period: '30d',
@@ -232,6 +245,14 @@ export const useStore = (userId?: string) => {
     }
   }, [state, userId]);
 
+  // Sincronizar parcelamentos no localStorage
+  useEffect(() => {
+    localStorage.setItem(
+      `securitycash_installments_${userId || 'guest'}`,
+      JSON.stringify(state.installments || [])
+    );
+  }, [state.installments, userId]);
+
   const setPlan = useCallback((plan: UserPlan) => {
     setState(prev => ({ ...prev, userPlan: plan }));
     localStorage.setItem(`securitycash_plan_${userId || 'guest'}`, plan);
@@ -381,9 +402,11 @@ export const useStore = (userId?: string) => {
         promises.push(supabase.from('categories').delete().eq('user_id', userId));
       }
       await Promise.all(promises);
+      localStorage.removeItem(`securitycash_installments_${userId}`);
       await fetchData();
     } else {
       localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(`securitycash_installments_guest`);
       setState(getInitialState());
     }
   }, [userId, fetchData]);
@@ -593,6 +616,65 @@ export const useStore = (userId?: string) => {
     }
   }, [userId]);
 
+  const addInstallment = useCallback((i: Omit<Installment, 'id' | 'status'>) => {
+    const newInstallment: Installment = {
+      ...i,
+      id: `inst_${Math.random().toString(36).substr(2, 9)}`,
+      status: i.paidInstallments >= i.totalInstallments ? 'concluido' : 'ativo'
+    };
+    setState(prev => ({
+      ...prev,
+      installments: [...(prev.installments || []), newInstallment]
+    }));
+  }, []);
+
+  const updateInstallment = useCallback((id: string, updates: Partial<Installment>) => {
+    setState(prev => {
+      const updatedInstallments = (prev.installments || []).map(inst => {
+        if (inst.id === id) {
+          const merged = { ...inst, ...updates };
+          merged.status = merged.paidInstallments >= merged.totalInstallments ? 'concluido' : 'ativo';
+          return merged;
+        }
+        return inst;
+      });
+      return { ...prev, installments: updatedInstallments };
+    });
+  }, []);
+
+  const deleteInstallment = useCallback((id: string) => {
+    setState(prev => ({
+      ...prev,
+      installments: (prev.installments || []).filter(inst => inst.id !== id)
+    }));
+  }, []);
+
+  const payInstallment = useCallback(async (id: string) => {
+    const inst = state.installments?.find(i => i.id === id);
+    if (!inst || inst.status !== 'ativo') return;
+
+    const nextPaid = inst.paidInstallments + 1;
+    const isFinished = nextPaid >= inst.totalInstallments;
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    await addTransaction({
+      type: 'despesa',
+      date: todayStr,
+      description: `${inst.title} (Parcela ${nextPaid}/${inst.totalInstallments})`,
+      categoryId: inst.categoryId,
+      amount: inst.amountPerInstallment
+    });
+
+    setState(prev => ({
+      ...prev,
+      installments: (prev.installments || []).map(i => 
+        i.id === id 
+          ? { ...i, paidInstallments: nextPaid, status: isFinished ? 'concluido' : 'ativo' }
+          : i
+      )
+    }));
+  }, [state.installments, addTransaction]);
+
   const addTransactionsBulk = useCallback(async (newTransactions: Omit<Transaction, 'id'>[], newCategories: Omit<Category, 'id'>[] = []) => {
     // 1. Map de nomes de categorias para seus IDs finais
     const categoryIdMap: Record<string, string> = {};
@@ -677,6 +759,10 @@ export const useStore = (userId?: string) => {
     deleteReminder,
     addGoal,
     updateGoal,
-    deleteGoal
+    deleteGoal,
+    addInstallment,
+    updateInstallment,
+    deleteInstallment,
+    payInstallment
   };
 };

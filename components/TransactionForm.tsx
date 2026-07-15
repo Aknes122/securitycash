@@ -7,7 +7,7 @@ import { formatCurrency } from '../utils/formatters';
 
 interface TransactionFormProps {
   categories: Category[];
-  initialData?: Transaction;
+  initialData?: Partial<Transaction>;
   onSubmit: (data: Partial<Transaction>) => void;
   onCancel: () => void;
   baseSalary?: number;
@@ -21,7 +21,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ categories, initialDa
   const [date, setDate] = useState(initialData?.date || new Date().toISOString().split('T')[0]);
   const [categoryId, setCategoryId] = useState(initialData?.categoryId || '');
   const [description, setDescription] = useState(initialData?.description || '');
-  const [amount, setAmount] = useState<string>(initialData?.amount.toString() || '');
+  const [amount, setAmount] = useState<string>(initialData?.amount?.toString() || '');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);

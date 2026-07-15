@@ -1,6 +1,6 @@
 
 import React, { useMemo } from 'react';
-import { AppState, Filters } from '../types';
+import { AppState, Filters, Reminder } from '../types';
 import {
   ArrowUpCircle,
   ArrowDownCircle,
@@ -47,10 +47,11 @@ interface DashboardProps {
   onOpenImport: () => void;
   onGoToReminders?: () => void;
   onGoToGoals?: () => void;
+  onUpdateReminder: (id: string, updates: Partial<Reminder>) => void;
   theme: 'light' | 'dark';
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ state, isLoading, onUpdateFilters, onAddRecord, onAddRecordVoice, onScanIA, onOpenImport, onGoToReminders, onGoToGoals, theme }) => {
+const Dashboard: React.FC<DashboardProps> = ({ state, isLoading, onUpdateFilters, onAddRecord, onAddRecordVoice, onScanIA, onOpenImport, onGoToReminders, onGoToGoals, onUpdateReminder, theme }) => {
   const filteredTransactions = useMemo(() => {
     const dashboardFilters: Filters = {
       ...state.filters,
@@ -456,9 +457,13 @@ const Dashboard: React.FC<DashboardProps> = ({ state, isLoading, onUpdateFilters
                  return (
                    <div key={rem.id} className="flex justify-between items-center p-5 bg-white dark:bg-zinc-950/40 rounded-3xl border border-zinc-100 dark:border-zinc-800/50 hover:border-blue-500/30 transition-all duration-500 group/rem">
                      <div className="flex items-center gap-4 min-w-0">
-                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isUrgent ? 'bg-rose-500/10 text-rose-500' : 'bg-blue-500/10 text-blue-500'}`}>
-                         <Clock size={20} />
-                       </div>
+                       <button
+                         onClick={() => onUpdateReminder(rem.id, { status: 'pago' })}
+                         className="flex-shrink-0 w-10 h-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-300 dark:text-zinc-600 hover:bg-emerald-500/10 hover:text-emerald-500 transition-all duration-300"
+                         title="Marcar como Pago"
+                       >
+                         <CheckCircle2 size={20} />
+                       </button>
                        <div className="min-w-0">
                          <p className="text-sm font-black text-zinc-900 dark:text-white truncate tracking-tight">{rem.title}</p>
                          <div className="flex items-center gap-2">

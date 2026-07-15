@@ -14,7 +14,8 @@ import {
   Sun,
   Moon,
   Sparkles,
-  Camera
+  Camera,
+  Receipt
 } from 'lucide-react';
 import { Page, UserPlan } from '../types';
 
@@ -61,6 +62,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: 'categories', label: 'Categorias', icon: Tag },
     { id: 'comparison', label: 'Comparativos', icon: ArrowLeftRight },
     { id: 'reminders', label: 'Lembretes', icon: Bell },
+    { id: 'installments', label: 'Parcelamentos', icon: Receipt },
     { id: 'goals', label: 'Metas', icon: Target },
   ];
 

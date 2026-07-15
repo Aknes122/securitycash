@@ -34,6 +34,18 @@ export interface Goal {
   deadline?: string;
 }
 
+export interface Installment {
+  id: string;
+  title: string;
+  totalInstallments: number;
+  paidInstallments: number;
+  amountPerInstallment: number;
+  dueDateDay: number; // Day of the month the installment is due (1-31)
+  categoryId: string; // Category ID linked to this installment
+  status: 'ativo' | 'concluido';
+  description?: string;
+}
+
 export type PeriodFilter = '7d' | '30d' | 'all' | 'custom';
 
 export interface Filters {
@@ -50,6 +62,7 @@ export interface AppState {
   categories: Category[];
   reminders: Reminder[];
   goals: Goal[];
+  installments: Installment[];
   filters: Filters;
   dashboardFilters: {
     period: PeriodFilter;
@@ -61,4 +74,4 @@ export interface AppState {
   baseSalary?: number;
 }
 
-export type Page = 'dashboard' | 'records' | 'categories' | 'comparison' | 'reminders' | 'goals' | 'profile';
+export type Page = 'dashboard' | 'records' | 'categories' | 'comparison' | 'reminders' | 'goals' | 'profile' | 'installments';

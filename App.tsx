@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from './hooks/useStore';
-import { Page, Transaction } from './types';
+import { Page, Transaction, Reminder } from './types';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import Records from './components/Records';
@@ -10,6 +10,7 @@ import CategoryManager from './components/CategoryManager';
 import Comparison from './components/Comparison';
 import Reminders from './components/Reminders';
 import Goals from './components/Goals';
+import Installments from './components/Installments';
 import AIScanner from './components/AIScanner';
 import ImportModal from './components/ImportModal';
 import TransactionForm from './components/TransactionForm';
@@ -68,6 +69,10 @@ const App: React.FC = () => {
     addGoal,
     updateGoal,
     deleteGoal,
+    addInstallment,
+    updateInstallment,
+    deleteInstallment,
+    payInstallment,
     resetData,
     fetchData,
     deleteAccount,
@@ -170,6 +175,21 @@ const App: React.FC = () => {
     }
   };
 
+  const handleUpdateReminder = (id: string, updates: Partial<Reminder>) => {
+    updateReminder(id, updates);
+    if (updates.status === 'pago') {
+      const reminder = state.reminders.find(r => r.id === id);
+      if (reminder) {
+        handleOpenForm(null, {
+          description: reminder.title,
+          amount: reminder.amount,
+          date: reminder.dueDate,
+          type: 'despesa'
+        });
+      }
+    }
+  };
+
   if (isRecovery && session) {
     return (
       <ResetPassword
@@ -210,6 +230,7 @@ const App: React.FC = () => {
               onOpenImport={() => setIsImportModalOpen(true)}
               onGoToReminders={() => setPage('reminders')}
               onGoToGoals={() => setPage('goals')}
+              onUpdateReminder={handleUpdateReminder}
               theme={theme}
             />
           )}
@@ -228,8 +249,17 @@ const App: React.FC = () => {
           )}
           {page === 'categories' && <CategoryManager state={state} onAddCategory={addCategory} onUpdateCategory={updateCategory} onDeleteCategory={deleteCategory} />}
           {page === 'comparison' && <Comparison state={state} />}
-          {page === 'reminders' && <Reminders state={state} onAddReminder={addReminder} onUpdateReminder={updateReminder} onDeleteReminder={deleteReminder} />}
+          {page === 'reminders' && <Reminders state={state} onAddReminder={addReminder} onUpdateReminder={handleUpdateReminder} onDeleteReminder={deleteReminder} />}
           {page === 'goals' && <Goals state={state} onAddGoal={addGoal} onUpdateGoal={updateGoal} onDeleteGoal={deleteGoal} />}
+          {page === 'installments' && (
+            <Installments
+              state={state}
+              onAddInstallment={addInstallment}
+              onUpdateInstallment={updateInstallment}
+              onDeleteInstallment={deleteInstallment}
+              onPayInstallment={payInstallment}
+            />
+          )}
           {page === 'profile' && (
             <Profile 
               user={session?.user} 
@@ -286,7 +316,7 @@ const App: React.FC = () => {
             </h3>
             <TransactionForm
               categories={state.categories}
-              initialData={editingTransaction || undefined}
+              initialData={editingTransaction || prefilledData || undefined}
               baseSalary={state.baseSalary || 3000}
               goals={state.goals}
               userPlan={state.userPlan}
