@@ -205,19 +205,33 @@ export const useStore = (userId?: string) => {
         { data: reminders },
         { data: goals },
         { data: categories },
-        { data: userProfile }
+        { data: userProfile },
+        { data: installmentsData }
       ] = await Promise.all([
         supabase.from('transactions').select('*').order('date', { ascending: false }),
         supabase.from('reminders').select('*').order('due_date', { ascending: true }),
         supabase.from('goals').select('*'),
         supabase.from('categories').select('*'),
-        supabase.from('profiles').select('plan, base_salary').eq('id', userId).maybeSingle()
+        supabase.from('profiles').select('plan, base_salary').eq('id', userId).maybeSingle(),
+        supabase.from('installments').select('*').order('created_at', { ascending: true })
       ]);
 
       setState(prev => {
         const finalCategories = (categories && categories.length > 0)
           ? categories
           : ((profile?.has_migrated || !localStorage.getItem(getKey())) ? [] : SEED_CATEGORIES);
+
+        const mappedInstallments = installmentsData ? installmentsData.map((i: any) => ({
+          id: i.id,
+          title: i.title,
+          totalInstallments: i.total_installments,
+          paidInstallments: i.paid_installments,
+          amountPerInstallment: Number(i.amount_per_installment),
+          dueDateDay: i.due_date_day,
+          categoryId: i.category_id,
+          status: i.status as 'ativo' | 'concluido',
+          description: i.description
+        })) : prev.installments;
 
         return {
           ...prev,
@@ -235,6 +249,7 @@ export const useStore = (userId?: string) => {
             currentAmount: Number(g.current_amount)
           })) : [],
           categories: finalCategories,
+          installments: mappedInstallments,
           userPlan: userProfile?.plan || prev.userPlan,
           baseSalary: userProfile?.base_salary || prev.baseSalary
         };
@@ -640,38 +655,75 @@ export const useStore = (userId?: string) => {
     }
   }, [userId]);
 
-  const addInstallment = useCallback((i: Omit<Installment, 'id' | 'status'>) => {
-    const newInstallment: Installment = {
-      ...i,
-      id: `inst_${Math.random().toString(36).substr(2, 9)}`,
-      status: i.paidInstallments >= i.totalInstallments ? 'concluido' : 'ativo'
-    };
+  const addInstallment = useCallback(async (i: Omit<Installment, 'id' | 'status'>) => {
+    const newId = `inst_${Math.random().toString(36).substr(2, 9)}`;
+    const status: 'ativo' | 'concluido' = i.paidInstallments >= i.totalInstallments ? 'concluido' : 'ativo';
+    const newInstallment: Installment = { ...i, id: newId, status };
+
+    if (userId) {
+      const { error } = await supabase.from('installments').insert([{
+        id: newId,
+        user_id: userId,
+        title: i.title,
+        total_installments: i.totalInstallments,
+        paid_installments: i.paidInstallments,
+        amount_per_installment: i.amountPerInstallment,
+        due_date_day: i.dueDateDay,
+        category_id: i.categoryId,
+        status,
+        description: i.description
+      }]);
+      if (error) { console.error('Erro ao salvar parcelamento', error); return; }
+    }
+
     setState(prev => ({
       ...prev,
       installments: [...(prev.installments || []), newInstallment]
     }));
-  }, []);
+  }, [userId]);
 
-  const updateInstallment = useCallback((id: string, updates: Partial<Installment>) => {
+  const updateInstallment = useCallback(async (id: string, updates: Partial<Installment>) => {
+    const newStatus = (updates.paidInstallments !== undefined || updates.totalInstallments !== undefined)
+      ? undefined // will be computed below after merge
+      : undefined;
+
     setState(prev => {
       const updatedInstallments = (prev.installments || []).map(inst => {
         if (inst.id === id) {
           const merged = { ...inst, ...updates };
           merged.status = merged.paidInstallments >= merged.totalInstallments ? 'concluido' : 'ativo';
+          if (userId) {
+            supabase.from('installments').update({
+              title: merged.title,
+              total_installments: merged.totalInstallments,
+              paid_installments: merged.paidInstallments,
+              amount_per_installment: merged.amountPerInstallment,
+              due_date_day: merged.dueDateDay,
+              category_id: merged.categoryId,
+              status: merged.status,
+              description: merged.description
+            }).eq('id', id).then(({ error }) => {
+              if (error) console.error('Erro ao atualizar parcelamento', error);
+            });
+          }
           return merged;
         }
         return inst;
       });
       return { ...prev, installments: updatedInstallments };
     });
-  }, []);
+  }, [userId]);
 
-  const deleteInstallment = useCallback((id: string) => {
+  const deleteInstallment = useCallback(async (id: string) => {
+    if (userId) {
+      const { error } = await supabase.from('installments').delete().eq('id', id);
+      if (error) { console.error('Erro ao excluir parcelamento', error); return; }
+    }
     setState(prev => ({
       ...prev,
       installments: (prev.installments || []).filter(inst => inst.id !== id)
     }));
-  }, []);
+  }, [userId]);
 
   const payInstallment = useCallback(async (id: string) => {
     const inst = state.installments?.find(i => i.id === id);
@@ -679,6 +731,7 @@ export const useStore = (userId?: string) => {
 
     const nextPaid = inst.paidInstallments + 1;
     const isFinished = nextPaid >= inst.totalInstallments;
+    const newStatus: 'ativo' | 'concluido' = isFinished ? 'concluido' : 'ativo';
 
     const todayStr = new Date().toISOString().split('T')[0];
     await addTransaction({
@@ -689,15 +742,22 @@ export const useStore = (userId?: string) => {
       amount: inst.amountPerInstallment
     });
 
+    if (userId) {
+      await supabase.from('installments').update({
+        paid_installments: nextPaid,
+        status: newStatus
+      }).eq('id', id);
+    }
+
     setState(prev => ({
       ...prev,
-      installments: (prev.installments || []).map(i => 
-        i.id === id 
-          ? { ...i, paidInstallments: nextPaid, status: isFinished ? 'concluido' : 'ativo' }
+      installments: (prev.installments || []).map(i =>
+        i.id === id
+          ? { ...i, paidInstallments: nextPaid, status: newStatus }
           : i
       )
     }));
-  }, [state.installments, addTransaction]);
+  }, [state.installments, addTransaction, userId]);
 
   const addRoutineEvent = useCallback((event: Omit<RoutineEvent, 'id'>) => {
     const newEvent: RoutineEvent = {
