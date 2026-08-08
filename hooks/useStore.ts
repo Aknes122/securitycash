@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { AppState, Transaction, Filters, Category, UserPlan, Reminder, Goal, Installment } from '../types';
+import { AppState, Transaction, Filters, Category, UserPlan, Reminder, Goal, Installment, RoutineEvent } from '../types';
 import { SEED_CATEGORIES, SEED_TRANSACTIONS, SEED_REMINDERS, SEED_GOALS, STORAGE_KEY } from '../constants';
 import { supabase } from '../lib/supabase';
 
@@ -18,6 +18,16 @@ export const useStore = (userId?: string) => {
       }
     }
 
+    const savedRoutines = localStorage.getItem(`securitycash_routines_${userId || 'guest'}`);
+    let loadedRoutines: RoutineEvent[] = [];
+    if (savedRoutines) {
+      try {
+        loadedRoutines = JSON.parse(savedRoutines);
+      } catch (e) {
+        console.error("Failed to load local storage routines", e);
+      }
+    }
+
     if (!userId) {
       return {
         transactions: [],
@@ -25,6 +35,7 @@ export const useStore = (userId?: string) => {
         reminders: [],
         goals: [],
         installments: loadedInstallments,
+        routineEvents: loadedRoutines,
         userPlan: 'basic',
         userName: '',
         baseSalary: 3000,
@@ -43,6 +54,7 @@ export const useStore = (userId?: string) => {
         if (!parsed.reminders) parsed.reminders = [];
         if (!parsed.goals) parsed.goals = [];
         parsed.installments = loadedInstallments;
+        parsed.routineEvents = loadedRoutines;
         if (!parsed.userPlan) parsed.userPlan = (savedPlan as UserPlan) || 'basic';
         if (!parsed.baseSalary) parsed.baseSalary = savedSalary ? Number(savedSalary) : 3000;
         if (!parsed.filters.startDate) parsed.filters.startDate = '';
@@ -61,6 +73,7 @@ export const useStore = (userId?: string) => {
       reminders: [],
       goals: [],
       installments: loadedInstallments,
+      routineEvents: loadedRoutines,
       userPlan: (savedPlan as UserPlan) || 'basic',
       filters: {
         period: '30d',
@@ -176,10 +189,14 @@ export const useStore = (userId?: string) => {
         }
 
         // Criar ou atualizar perfil marcando como migrado
-        await supabase.from('profiles').upsert({ id: userId, has_migrated: true });
-
-        // Recarregar os dados agora que foram possivelmente migrados
-        return fetchData();
+        const { error: upsertError } = await supabase.from('profiles').upsert({ id: userId, has_migrated: true });
+        
+        if (upsertError) {
+          console.error("Erro ao marcar perfil como migrado. Evitando loop infinito.", upsertError);
+        } else {
+          // Recarregar os dados agora que foram possivelmente migrados
+          return fetchData();
+        }
       }
 
       // 2. Buscar dados reais do banco
@@ -252,6 +269,13 @@ export const useStore = (userId?: string) => {
       JSON.stringify(state.installments || [])
     );
   }, [state.installments, userId]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      `securitycash_routines_${userId || 'guest'}`,
+      JSON.stringify(state.routineEvents || [])
+    );
+  }, [state.routineEvents, userId]);
 
   const setPlan = useCallback((plan: UserPlan) => {
     setState(prev => ({ ...prev, userPlan: plan }));
@@ -675,6 +699,34 @@ export const useStore = (userId?: string) => {
     }));
   }, [state.installments, addTransaction]);
 
+  const addRoutineEvent = useCallback((event: Omit<RoutineEvent, 'id'>) => {
+    const newEvent: RoutineEvent = {
+      ...event,
+      id: `rout_${Math.random().toString(36).substr(2, 9)}`,
+      user_id: userId
+    };
+    setState(prev => ({
+      ...prev,
+      routineEvents: [...(prev.routineEvents || []), newEvent]
+    }));
+  }, [userId]);
+
+  const updateRoutineEvent = useCallback((id: string, updates: Partial<RoutineEvent>) => {
+    setState(prev => ({
+      ...prev,
+      routineEvents: (prev.routineEvents || []).map(event => 
+        event.id === id ? { ...event, ...updates } : event
+      )
+    }));
+  }, []);
+
+  const deleteRoutineEvent = useCallback((id: string) => {
+    setState(prev => ({
+      ...prev,
+      routineEvents: (prev.routineEvents || []).filter(event => event.id !== id)
+    }));
+  }, []);
+
   const addTransactionsBulk = useCallback(async (newTransactions: Omit<Transaction, 'id'>[], newCategories: Omit<Category, 'id'>[] = []) => {
     // 1. Map de nomes de categorias para seus IDs finais
     const categoryIdMap: Record<string, string> = {};
@@ -763,6 +815,9 @@ export const useStore = (userId?: string) => {
     addInstallment,
     updateInstallment,
     deleteInstallment,
-    payInstallment
+    payInstallment,
+    addRoutineEvent,
+    updateRoutineEvent,
+    deleteRoutineEvent
   };
 };

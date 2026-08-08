@@ -15,7 +15,8 @@ import {
   Moon,
   Sparkles,
   Camera,
-  Receipt
+  Receipt,
+  CalendarDays
 } from 'lucide-react';
 import { Page, UserPlan } from '../types';
 
@@ -64,6 +65,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: 'reminders', label: 'Lembretes', icon: Bell },
     { id: 'installments', label: 'Parcelamentos', icon: Receipt },
     { id: 'goals', label: 'Metas', icon: Target },
+    { id: 'routine', label: 'Rotina', icon: CalendarDays },
   ];
 
   const handleNavigate = (pageId: Page) => {

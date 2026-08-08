@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from './hooks/useStore';
 import { Page, Transaction, Reminder } from './types';
@@ -11,6 +10,7 @@ import Comparison from './components/Comparison';
 import Reminders from './components/Reminders';
 import Goals from './components/Goals';
 import Installments from './components/Installments';
+import Routine from './components/Routine';
 import AIScanner from './components/AIScanner';
 import ImportModal from './components/ImportModal';
 import TransactionForm from './components/TransactionForm';
@@ -73,6 +73,9 @@ const App: React.FC = () => {
     updateInstallment,
     deleteInstallment,
     payInstallment,
+    addRoutineEvent,
+    updateRoutineEvent,
+    deleteRoutineEvent,
     resetData,
     fetchData,
     deleteAccount,
@@ -228,8 +231,13 @@ const App: React.FC = () => {
               onAddRecordVoice={() => handleOpenForm(null, null, true)}
               onScanIA={() => setIsScannerOpen(true)}
               onOpenImport={() => setIsImportModalOpen(true)}
+              onAddInstallment={addInstallment}
+              onUpdateInstallment={updateInstallment}
+              onDeleteInstallment={deleteInstallment}
+              onPayInstallment={payInstallment}
               onGoToReminders={() => setPage('reminders')}
               onGoToGoals={() => setPage('goals')}
+              onGoToRoutine={() => setPage('routine')}
               onUpdateReminder={handleUpdateReminder}
               theme={theme}
             />
@@ -258,6 +266,14 @@ const App: React.FC = () => {
               onUpdateInstallment={updateInstallment}
               onDeleteInstallment={deleteInstallment}
               onPayInstallment={payInstallment}
+            />
+          )}
+          {page === 'routine' && (
+            <Routine
+              state={state}
+              onAddEvent={addRoutineEvent}
+              onUpdateEvent={updateRoutineEvent}
+              onDeleteEvent={deleteRoutineEvent}
             />
           )}
           {page === 'profile' && (

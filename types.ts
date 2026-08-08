@@ -57,12 +57,28 @@ export interface Filters {
   endDate: string;
 }
 
+export interface RoutineEvent {
+  id: string;
+  user_id?: string;
+  title: string;
+  description?: string;
+  type: 'tarefa' | 'reuniao' | 'lembrete';
+  isAllDay: boolean;
+  date: string; // ISO format YYYY-MM-DD
+  startTime?: string; // HH:mm format
+  endTime?: string; // HH:mm format
+  recurrence: 'none' | 'daily' | 'weekly' | 'custom_days';
+  customDays?: number[]; // 0-6 for Sunday-Saturday if weekly/custom
+  color?: string;
+}
+
 export interface AppState {
   transactions: Transaction[];
   categories: Category[];
   reminders: Reminder[];
   goals: Goal[];
   installments: Installment[];
+  routineEvents: RoutineEvent[];
   filters: Filters;
   dashboardFilters: {
     period: PeriodFilter;
@@ -74,4 +90,4 @@ export interface AppState {
   baseSalary?: number;
 }
 
-export type Page = 'dashboard' | 'records' | 'categories' | 'comparison' | 'reminders' | 'goals' | 'profile' | 'installments';
+export type Page = 'dashboard' | 'records' | 'categories' | 'comparison' | 'reminders' | 'goals' | 'profile' | 'installments' | 'routine';
