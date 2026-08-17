@@ -3,16 +3,15 @@ import { AppState } from "../types";
 import { sendChatMessage, ChatMessage } from "../utils/aiConsultant";
 import {
   Send,
-  Bot,
-  User,
-  Sparkles,
   Trash2,
   AlertCircle,
   Loader2,
   ChevronRight,
   TrendingUp,
-  Coins,
-  ShieldCheck
+  PiggyBank,
+  BarChart3,
+  UserCircle2,
+  Sparkles,
 } from "lucide-react";
 
 interface ChatConsultantProps {
@@ -27,7 +26,6 @@ const ChatConsultant: React.FC<ChatConsultantProps> = ({ state }) => {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom of messages
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -43,10 +41,9 @@ const ChatConsultant: React.FC<ChatConsultantProps> = ({ state }) => {
     setInputValue("");
     setErrorMsg(null);
 
-    // 1. Add user message locally
     const newUserMessage: ChatMessage = {
       role: "user",
-      parts: [{ text: userMessageText }]
+      parts: [{ text: userMessageText }],
     };
 
     const updatedMessages = [...messages, newUserMessage];
@@ -54,19 +51,16 @@ const ChatConsultant: React.FC<ChatConsultantProps> = ({ state }) => {
     setIsLoading(true);
 
     try {
-      // 2. Call helper
       const aiResponse = await sendChatMessage(userMessageText, messages, state);
-
-      // 3. Add AI message locally
       const newAiMessage: ChatMessage = {
         role: "model",
-        parts: [{ text: aiResponse }]
+        parts: [{ text: aiResponse }],
       };
       setMessages([...updatedMessages, newAiMessage]);
     } catch (err) {
       console.error(err);
       setErrorMsg(
-        err instanceof Error ? err.message : "Desculpe, ocorreu um erro ao obter conselhos da IA."
+        err instanceof Error ? err.message : "Desculpe, ocorreu um erro ao obter a análise."
       );
     } finally {
       setIsLoading(false);
@@ -74,76 +68,58 @@ const ChatConsultant: React.FC<ChatConsultantProps> = ({ state }) => {
   };
 
   const handleClearChat = () => {
-    if (window.confirm("Deseja realmente limpar toda a conversa com o consultor?")) {
+    if (window.confirm("Deseja encerrar essa sessão e limpar o histórico?")) {
       setMessages([]);
       setErrorMsg(null);
     }
   };
 
-  // Helper to parse basic markdown elements (bold, lists, headers, empty lines)
   const formatMessageText = (text: string): React.ReactNode => {
     return text.split("\n").map((line, i) => {
-      let formattedLine = line;
-
-      // Handle sub-headers (###)
-      if (formattedLine.startsWith("### ")) {
+      if (line.startsWith("### ")) {
         return (
-          <h4 key={i} className="text-sm font-bold mt-4 mb-2 text-zinc-900 dark:text-white flex items-center gap-1.5">
-            <Sparkles size={14} className="text-amber-500 shrink-0" />
-            {formattedLine.replace("### ", "")}
+          <h4 key={i} className="text-sm font-bold mt-4 mb-1.5 text-zinc-800 dark:text-zinc-100">
+            {line.replace("### ", "")}
           </h4>
         );
       }
-      // Handle headers (##)
-      if (formattedLine.startsWith("## ")) {
+      if (line.startsWith("## ")) {
         return (
-          <h3 key={i} className="text-base font-black mt-5 mb-3 text-zinc-950 dark:text-white border-b border-zinc-100 dark:border-zinc-800 pb-1">
-            {formattedLine.replace("## ", "")}
+          <h3 key={i} className="text-sm font-extrabold mt-5 mb-2 text-zinc-900 dark:text-white border-b border-zinc-200 dark:border-zinc-700 pb-1">
+            {line.replace("## ", "")}
           </h3>
         );
       }
 
-      // Handle bold syntax: **text**
       const boldRegex = /\*\*(.*?)\*\*/g;
       const parts: React.ReactNode[] = [];
       let lastIndex = 0;
       let match;
-
-      while ((match = boldRegex.exec(formattedLine)) !== null) {
-        if (match.index > lastIndex) {
-          parts.push(formattedLine.substring(lastIndex, match.index));
-        }
+      while ((match = boldRegex.exec(line)) !== null) {
+        if (match.index > lastIndex) parts.push(line.substring(lastIndex, match.index));
         parts.push(
-          <strong key={match.index} className="font-extrabold text-blue-600 dark:text-blue-400">
+          <strong key={match.index} className="font-bold text-zinc-900 dark:text-white">
             {match[1]}
           </strong>
         );
         lastIndex = boldRegex.lastIndex;
       }
+      if (lastIndex < line.length) parts.push(line.substring(lastIndex));
+      const content = parts.length > 0 ? parts : line;
 
-      if (lastIndex < formattedLine.length) {
-        parts.push(formattedLine.substring(lastIndex));
-      }
-
-      const content = parts.length > 0 ? parts : formattedLine;
-
-      // Handle lists starting with "-" or "*"
       if (line.trim().startsWith("- ") || line.trim().startsWith("* ")) {
         const listText = line.trim().substring(2);
         return (
-          <li key={i} className="ml-4 list-disc text-sm text-zinc-700 dark:text-zinc-300 my-1 leading-relaxed pl-1">
+          <li key={i} className="ml-4 text-sm text-zinc-700 dark:text-zinc-300 my-0.5 leading-relaxed list-disc pl-1">
             {formatMessageText(listText)}
           </li>
         );
       }
 
-      // Handle empty lines for spacing
-      if (line.trim() === "") {
-        return <div key={i} className="h-2" />;
-      }
+      if (line.trim() === "") return <div key={i} className="h-2" />;
 
       return (
-        <p key={i} className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300 my-1.5">
+        <p key={i} className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300 my-1">
           {content}
         </p>
       );
@@ -152,50 +128,42 @@ const ChatConsultant: React.FC<ChatConsultantProps> = ({ state }) => {
 
   const suggestions = [
     {
-      title: "Como Bater Minhas Metas?",
-      sub: "Estratégia personalizada para metas ativas",
+      title: "Alcançar minhas metas",
+      sub: "Estratégia personalizada com base nas suas metas ativas",
       text: "Como posso me planejar melhor para alcançar minhas metas atuais cadastradas no app?",
-      icon: Coins,
-      color: "emerald"
-    },
-    {
-      title: "Onde Economizar Hoje?",
-      sub: "Análise dos meus últimos lançamentos",
-      text: "Analise meus gastos e transações recentes e sugira onde posso fazer cortes sem sofrer.",
       icon: TrendingUp,
-      color: "blue"
     },
     {
-      title: "Reserva & Investimentos",
-      sub: "Como começar com meu saldo atual",
-      text: "Com base no meu saldo e renda do app, qual a melhor forma de criar uma reserva e onde investir com segurança?",
-      icon: ShieldCheck,
-      color: "amber"
-    }
+      title: "Cortar gastos",
+      sub: "Análise dos seus lançamentos mais recentes",
+      text: "Analise meus gastos e transações recentes e sugira onde posso fazer cortes sem sofrer.",
+      icon: PiggyBank,
+    },
+    {
+      title: "Investir com segurança",
+      sub: "Opções adequadas ao seu perfil e saldo atual",
+      text: "Com base no meu saldo e renda, qual a melhor forma de criar uma reserva e onde investir com segurança?",
+      icon: BarChart3,
+    },
   ];
 
+  const userName = state.userName || "você";
+
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)] lg:h-[calc(100vh-6rem)] bg-white/40 dark:bg-zinc-900/40 backdrop-blur-2xl border border-zinc-200/50 dark:border-zinc-800/50 rounded-[2.5rem] shadow-xl overflow-hidden animate-in fade-in duration-500 relative">
-      
-      {/* Glow effect background */}
-      <div className="absolute top-0 right-0 w-72 h-72 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-72 h-72 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+    <div className="flex flex-col h-[calc(100vh-8rem)] lg:h-[calc(100vh-6rem)] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/70 rounded-3xl overflow-hidden shadow-sm">
 
       {/* Header */}
-      <header className="px-6 py-5 border-b border-zinc-200/50 dark:border-zinc-800/50 flex items-center justify-between bg-white/50 dark:bg-zinc-950/40 relative z-10">
+      <header className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-500 to-emerald-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/10">
-            <Bot size={22} className="animate-pulse" />
+          <div className="w-9 h-9 rounded-full bg-zinc-900 dark:bg-white flex items-center justify-center shrink-0">
+            <Sparkles size={16} className="text-white dark:text-zinc-900" />
           </div>
           <div>
-            <h2 className="text-base font-black tracking-tight text-zinc-900 dark:text-white flex items-center gap-1.5">
-              Consultor IA FinWise
-              <span className="text-[9px] font-black tracking-widest uppercase bg-blue-500/10 text-blue-500 px-2 py-0.5 rounded-full">
-                Gemini 2.0
-              </span>
+            <h2 className="text-sm font-bold text-zinc-900 dark:text-white leading-tight">
+              Meu Assessor Financeiro
             </h2>
-            <p className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400">
-              Seu assistente pessoal para finanças, economia e investimentos
+            <p className="text-[11px] text-zinc-400 dark:text-zinc-500 leading-tight">
+              Análise personalizada · Dados do seu app
             </p>
           </div>
         </div>
@@ -203,121 +171,122 @@ const ChatConsultant: React.FC<ChatConsultantProps> = ({ state }) => {
         {messages.length > 0 && (
           <button
             onClick={handleClearChat}
-            className="flex items-center gap-1.5 px-3 py-2 bg-rose-500/5 hover:bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-bold transition-all hover:scale-105 active:scale-95"
-            title="Limpar conversa"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-zinc-500 dark:text-zinc-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl text-xs font-medium transition-all"
+            title="Encerrar sessão"
           >
-            <Trash2 size={14} />
-            <span className="hidden sm:inline">Limpar Chat</span>
+            <Trash2 size={13} />
+            <span className="hidden sm:inline">Encerrar</span>
           </button>
         )}
       </header>
 
-      {/* Main Content (Messages feed / Welcome Suggestions) */}
-      <div className="flex-1 overflow-y-auto px-6 py-6 custom-scrollbar space-y-6 relative z-10">
+      {/* Messages / Welcome */}
+      <div className="flex-1 overflow-y-auto px-5 py-6 space-y-5 custom-scrollbar">
         {messages.length === 0 ? (
-          <div className="max-w-2xl mx-auto h-full flex flex-col justify-center py-8">
-            <div className="text-center mb-8 space-y-3">
-              <div className="w-16 h-16 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-3xl flex items-center justify-center mx-auto shadow-inner">
-                <Sparkles size={32} />
-              </div>
-              <h3 className="text-xl font-black text-zinc-900 dark:text-white tracking-tight">
-                Olá! Eu sou seu Consultor Financeiro de IA
-              </h3>
-              <p className="text-sm text-zinc-500 max-w-md mx-auto leading-relaxed">
-                Estou sincronizado com seus lançamentos, saldos e metas. Me pergunte qualquer coisa sobre investimentos ou como organizar suas finanças!
+          <div className="max-w-xl mx-auto h-full flex flex-col justify-center gap-6 py-4">
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">
+                Bem-vindo
               </p>
+              <h3 className="text-2xl font-bold text-zinc-900 dark:text-white leading-snug">
+                Olá, {userName}.<br />
+                <span className="text-zinc-400 dark:text-zinc-500 font-medium text-xl">
+                  Em que posso ajudar hoje?
+                </span>
+              </h3>
             </div>
 
-            {/* Sugestões rápidas */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
               {suggestions.map((s, idx) => (
                 <button
                   key={idx}
                   onClick={() => handleSend(s.text)}
-                  className="group flex flex-col items-start p-5 bg-white/70 dark:bg-zinc-950/40 border border-zinc-200/50 dark:border-zinc-800/50 rounded-2xl shadow-sm hover:shadow-lg hover:-translate-y-0.5 hover:border-blue-500/30 transition-all duration-300 text-left"
+                  className="group w-full flex items-center gap-4 p-4 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl hover:border-zinc-400 dark:hover:border-zinc-600 hover:bg-white dark:hover:bg-zinc-800 transition-all duration-200 text-left"
                 >
-                  <div className={`p-2.5 bg-${s.color}-500/10 text-${s.color}-500 rounded-xl mb-4 group-hover:scale-110 transition-transform`}>
-                    <s.icon size={18} />
+                  <div className="w-9 h-9 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shrink-0 shadow-sm group-hover:shadow transition-shadow">
+                    <s.icon size={16} className="text-zinc-600 dark:text-zinc-300" />
                   </div>
-                  <h4 className="text-xs font-black text-zinc-900 dark:text-white uppercase tracking-wider mb-1 flex items-center gap-1">
-                    {s.title}
-                    <ChevronRight size={12} className="text-zinc-400 group-hover:translate-x-0.5 transition-transform" />
-                  </h4>
-                  <p className="text-[10px] text-zinc-500 leading-normal font-medium">
-                    {s.sub}
-                  </p>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100 truncate">
+                      {s.title}
+                    </p>
+                    <p className="text-xs text-zinc-400 dark:text-zinc-500 truncate">
+                      {s.sub}
+                    </p>
+                  </div>
+                  <ChevronRight size={15} className="text-zinc-300 dark:text-zinc-600 group-hover:text-zinc-500 dark:group-hover:text-zinc-400 shrink-0 transition-colors" />
                 </button>
               ))}
             </div>
+
+            <p className="text-[11px] text-zinc-300 dark:text-zinc-600 text-center leading-relaxed">
+              As análises são baseadas nos seus dados cadastrados no app e têm caráter educativo.
+            </p>
           </div>
         ) : (
-          <div className="max-w-3xl mx-auto space-y-4">
+          <div className="max-w-2xl mx-auto space-y-6">
             {messages.map((msg, index) => {
               const isUser = msg.role === "user";
               const textContent = msg.parts[0]?.text || "";
-              
+
               return (
                 <div
                   key={index}
-                  className={`flex gap-3 max-w-[85%] ${
-                    isUser ? "ml-auto flex-row-reverse" : "mr-auto"
-                  } animate-in fade-in slide-in-from-bottom-2 duration-300`}
+                  className={`flex gap-3 ${isUser ? "flex-row-reverse" : ""} animate-in fade-in slide-in-from-bottom-1 duration-200`}
                 >
                   {/* Avatar */}
                   <div
-                    className={`w-8 h-8 rounded-xl shrink-0 flex items-center justify-center shadow-md ${
+                    className={`w-7 h-7 rounded-full shrink-0 flex items-center justify-center mt-0.5 ${
                       isUser
-                        ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900"
-                        : "bg-gradient-to-br from-blue-600 to-indigo-500 text-white"
-                    }`}
-                  >
-                    {isUser ? <User size={16} /> : <Bot size={16} />}
-                  </div>
-
-                  {/* Bubble content */}
-                  <div
-                    className={`p-4 rounded-2xl text-zinc-800 dark:text-zinc-200 shadow-sm border ${
-                      isUser
-                        ? "bg-blue-600 text-white border-transparent rounded-tr-none"
-                        : "bg-white/80 dark:bg-zinc-950/60 border-zinc-200/50 dark:border-zinc-800/50 rounded-tl-none"
+                        ? "bg-zinc-200 dark:bg-zinc-700"
+                        : "bg-zinc-900 dark:bg-white"
                     }`}
                   >
                     {isUser ? (
-                      <p className="text-sm leading-relaxed text-white whitespace-pre-wrap">
-                        {textContent}
-                      </p>
+                      <UserCircle2 size={16} className="text-zinc-500 dark:text-zinc-300" />
                     ) : (
-                      <div className="space-y-0.5">
-                        {formatMessageText(textContent)}
-                      </div>
+                      <Sparkles size={13} className="text-white dark:text-zinc-900" />
+                    )}
+                  </div>
+
+                  {/* Bubble */}
+                  <div
+                    className={`max-w-[82%] px-4 py-3 rounded-2xl text-sm ${
+                      isUser
+                        ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-tr-sm"
+                        : "bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 rounded-tl-sm"
+                    }`}
+                  >
+                    {isUser ? (
+                      <p className="leading-relaxed whitespace-pre-wrap">{textContent}</p>
+                    ) : (
+                      <div className="space-y-0.5">{formatMessageText(textContent)}</div>
                     )}
                   </div>
                 </div>
               );
             })}
 
-            {/* Loader indicator while generating */}
+            {/* Loading */}
             {isLoading && (
-              <div className="flex gap-3 mr-auto max-w-[85%] animate-pulse">
-                <div className="w-8 h-8 rounded-xl shrink-0 flex items-center justify-center bg-gradient-to-br from-blue-600 to-indigo-500 text-white shadow-md">
-                  <Bot size={16} />
+              <div className="flex gap-3 animate-in fade-in duration-300">
+                <div className="w-7 h-7 rounded-full shrink-0 bg-zinc-900 dark:bg-white flex items-center justify-center mt-0.5">
+                  <Sparkles size={13} className="text-white dark:text-zinc-900" />
                 </div>
-                <div className="p-4 rounded-2xl bg-white/80 dark:bg-zinc-950/60 border border-zinc-200/50 dark:border-zinc-800/50 rounded-tl-none flex items-center gap-2">
-                  <Loader2 size={14} className="animate-spin text-blue-500" />
-                  <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest animate-pulse">
-                    Pensando...
-                  </span>
+                <div className="px-4 py-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl rounded-tl-sm flex items-center gap-2">
+                  <Loader2 size={13} className="animate-spin text-zinc-400" />
+                  <span className="text-xs text-zinc-400 dark:text-zinc-500">Analisando...</span>
                 </div>
               </div>
             )}
 
-            {/* Error Message banner */}
+            {/* Error */}
             {errorMsg && (
-              <div className="max-w-md mx-auto p-4 bg-rose-500/5 border border-rose-500/20 text-rose-600 dark:text-rose-400 rounded-2xl flex items-start gap-3 shadow-sm">
-                <AlertCircle size={20} className="shrink-0 mt-0.5" />
-                <div className="text-left space-y-1">
-                  <p className="text-sm font-black">Falha na Conexão</p>
-                  <p className="text-xs leading-normal">{errorMsg}</p>
+              <div className="flex gap-3 p-4 bg-rose-50 dark:bg-rose-500/5 border border-rose-200 dark:border-rose-500/20 rounded-2xl">
+                <AlertCircle size={16} className="text-rose-500 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-rose-700 dark:text-rose-400">Erro na análise</p>
+                  <p className="text-xs text-rose-500 dark:text-rose-500 mt-0.5 leading-relaxed">{errorMsg}</p>
                 </div>
               </div>
             )}
@@ -327,37 +296,36 @@ const ChatConsultant: React.FC<ChatConsultantProps> = ({ state }) => {
         )}
       </div>
 
-      {/* Input area */}
-      <div className="p-4 border-t border-zinc-200/50 dark:border-zinc-800/50 bg-white/70 dark:bg-zinc-950/40 relative z-10">
+      {/* Input */}
+      <div className="px-5 pb-5 pt-3 border-t border-zinc-100 dark:border-zinc-800 shrink-0">
         <form
           onSubmit={(e) => {
             e.preventDefault();
             handleSend(inputValue);
           }}
-          className="max-w-3xl mx-auto flex items-center gap-2 relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-1.5 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500/50 transition-all"
+          className="max-w-2xl mx-auto flex items-center gap-2"
         >
           <input
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Pergunte sobre CDB, Tesouro, como economizar nas metas..."
-            className="flex-1 bg-transparent py-2.5 px-4 outline-none border-none text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500"
+            placeholder="Escreva sua dúvida financeira..."
+            className="flex-1 h-11 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 outline-none focus:border-zinc-400 dark:focus:border-zinc-600 transition-colors"
             disabled={isLoading}
           />
           <button
             type="submit"
             disabled={!inputValue.trim() || isLoading}
-            className={`p-2.5 rounded-xl flex items-center justify-center text-white shadow-lg transition-all ${
+            className={`h-11 w-11 rounded-xl flex items-center justify-center transition-all shrink-0 ${
               inputValue.trim() && !isLoading
-                ? "bg-blue-600 hover:bg-blue-500 shadow-blue-500/20 hover:scale-105 active:scale-95 cursor-pointer"
-                : "bg-zinc-200 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-600 shadow-none cursor-not-allowed"
+                ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:opacity-80 active:scale-95 cursor-pointer"
+                : "bg-zinc-100 dark:bg-zinc-800 text-zinc-300 dark:text-zinc-600 cursor-not-allowed"
             }`}
           >
             <Send size={16} />
           </button>
         </form>
       </div>
-
     </div>
   );
 };

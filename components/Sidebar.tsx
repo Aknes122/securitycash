@@ -65,7 +65,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: 'reminders', label: 'Lembretes', icon: Bell },
     { id: 'installments', label: 'Parcelamentos', icon: Receipt },
     { id: 'goals', label: 'Metas', icon: Target },
-    { id: 'chat', label: 'Consultor IA', icon: MessageSquareText },
+    { id: 'chat', label: 'Meu Assessor', icon: MessageSquareText },
   ];
 
   const handleNavigate = (pageId: Page) => {
