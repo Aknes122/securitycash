@@ -10,8 +10,8 @@ import Comparison from './components/Comparison';
 import Reminders from './components/Reminders';
 import Goals from './components/Goals';
 import Installments from './components/Installments';
-import Routine from './components/Routine';
 import AIScanner from './components/AIScanner';
+import ChatConsultant from './components/ChatConsultant';
 import ImportModal from './components/ImportModal';
 import TransactionForm from './components/TransactionForm';
 import ReferralPopup from './components/ReferralPopup';
@@ -73,9 +73,6 @@ const App: React.FC = () => {
     updateInstallment,
     deleteInstallment,
     payInstallment,
-    addRoutineEvent,
-    updateRoutineEvent,
-    deleteRoutineEvent,
     resetData,
     fetchData,
     deleteAccount,
@@ -237,7 +234,6 @@ const App: React.FC = () => {
               onPayInstallment={payInstallment}
               onGoToReminders={() => setPage('reminders')}
               onGoToGoals={() => setPage('goals')}
-              onGoToRoutine={() => setPage('routine')}
               onUpdateReminder={handleUpdateReminder}
               theme={theme}
             />
@@ -268,14 +264,11 @@ const App: React.FC = () => {
               onPayInstallment={payInstallment}
             />
           )}
-          {page === 'routine' && (
-            <Routine
-              state={state}
-              onAddEvent={addRoutineEvent}
-              onUpdateEvent={updateRoutineEvent}
-              onDeleteEvent={deleteRoutineEvent}
-            />
+
+          {page === 'chat' && (
+            <ChatConsultant state={state} />
           )}
+
           {page === 'profile' && (
             <Profile 
               user={session?.user} 

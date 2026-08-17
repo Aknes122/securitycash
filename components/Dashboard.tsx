@@ -1,6 +1,6 @@
 
 import React, { useMemo } from 'react';
-import { AppState, Filters, Reminder, Installment, RoutineEvent } from '../types';
+import { AppState, Filters, Reminder, Installment } from '../types';
 import {
   ArrowUpCircle,
   ArrowDownCircle,
@@ -52,12 +52,11 @@ interface DashboardProps {
   onPayInstallment: (id: string) => void;
   onGoToReminders?: () => void;
   onGoToGoals?: () => void;
-  onGoToRoutine?: () => void;
   onUpdateReminder: (id: string, updates: Partial<Reminder>) => void;
   theme: 'light' | 'dark';
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ state, isLoading, onUpdateFilters, onAddRecord, onAddRecordVoice, onScanIA, onOpenImport, onGoToReminders, onGoToGoals, onGoToRoutine, onUpdateReminder, onAddInstallment, onUpdateInstallment, onDeleteInstallment, onPayInstallment, theme }) => {
+const Dashboard: React.FC<DashboardProps> = ({ state, isLoading, onUpdateFilters, onAddRecord, onAddRecordVoice, onScanIA, onOpenImport, onGoToReminders, onGoToGoals, onUpdateReminder, onAddInstallment, onUpdateInstallment, onDeleteInstallment, onPayInstallment, theme }) => {
   const filteredTransactions = useMemo(() => {
     const dashboardFilters: Filters = {
       ...state.filters,
@@ -95,47 +94,7 @@ const Dashboard: React.FC<DashboardProps> = ({ state, isLoading, onUpdateFilters
 
   const topCategoryName = state.categories.find(c => c.id === kpis.topCategoryId)?.name || 'N/A';
 
-  const todayEvents = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
 
-    const eventHappensOnDay = (event: RoutineEvent, dayDate: Date) => {
-      const eventDate = new Date(event.date + 'T00:00:00');
-      eventDate.setHours(0, 0, 0, 0);
-      const d = new Date(dayDate);
-      d.setHours(0, 0, 0, 0);
-
-      if (d < eventDate) return false;
-
-      if (event.recurrence === 'none') {
-        return d.getTime() === eventDate.getTime();
-      }
-      if (event.recurrence === 'daily') {
-        return true;
-      }
-      if (event.recurrence === 'weekly') {
-        return d.getDay() === eventDate.getDay();
-      }
-      if (event.recurrence === 'custom_days' && event.customDays) {
-        return event.customDays.includes(d.getDay());
-      }
-      return false;
-    };
-
-    const getEventTimestamp = (e: RoutineEvent) => {
-      if (e.isAllDay) return -Infinity;
-      const timePart = e.startTime || '00:00';
-      const iso = `${e.date}T${timePart}:00-03:00`;
-      return new Date(iso).getTime();
-    };
-
-    const dayEvents = (state.routineEvents || []).filter(e => eventHappensOnDay(e, today));
-    return dayEvents.sort((a, b) => {
-      if (a.isAllDay && !b.isAllDay) return -1;
-      if (!a.isAllDay && b.isAllDay) return 1;
-      return getEventTimestamp(a) - getEventTimestamp(b);
-    });
-  }, [state.routineEvents]);
 
   if (isLoading) {
     return (
@@ -395,80 +354,32 @@ const Dashboard: React.FC<DashboardProps> = ({ state, isLoading, onUpdateFilters
       </div>
 
       {/* Agenda do Dia + Metas: side-by-side */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-
-        {/* Agenda do Dia */}
-        <div className="bg-white/50 dark:bg-zinc-900/50 backdrop-blur-xl border border-zinc-200/50 dark:border-zinc-800/50 p-8 rounded-[3rem] shadow-sm space-y-6 relative overflow-hidden group">
-          <div className="absolute -right-8 -top-8 w-32 h-32 bg-blue-500/5 blur-3xl rounded-full" />
-          <div className="flex justify-between items-center relative z-10">
-            <div className="space-y-1">
-              <h3 className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.3em]">Agenda do Dia</h3>
-              <p className="text-xs font-bold text-zinc-500">Seus compromissos de hoje</p>
-            </div>
-            <button onClick={onGoToRoutine} className="p-2.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-500 dark:text-zinc-400 rounded-2xl transition-all duration-300 group-hover:translate-x-1">
-              <ChevronRight size={18} />
-            </button>
+      {/* Metas - full width */}
+      <div className="bg-white/50 dark:bg-zinc-900/50 backdrop-blur-xl border border-zinc-200/50 dark:border-zinc-800/50 p-8 rounded-[3rem] shadow-sm space-y-6 relative overflow-hidden group">
+        <div className="absolute -right-8 -top-8 w-32 h-32 bg-emerald-500/5 blur-3xl rounded-full" />
+        <div className="flex justify-between items-center relative z-10">
+          <div className="space-y-1">
+            <h3 className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.3em]">Suas Metas</h3>
+            <p className="text-xs font-bold text-zinc-500">Progresso para seus sonhos</p>
           </div>
-          <div className="space-y-3 relative z-10">
-            {todayEvents.length === 0 ? (
-              <div className="py-8 text-center space-y-3">
-                <div className="w-14 h-14 bg-zinc-100 dark:bg-zinc-800/50 rounded-3xl flex items-center justify-center mx-auto text-blue-500">
-                  <CheckCircle2 size={28} />
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-bold text-zinc-800 dark:text-zinc-200">Nada agendado!</p>
-                  <p className="text-[11px] text-zinc-500">Aproveite seu dia ou planeje novas tarefas.</p>
-                </div>
-              </div>
-            ) : (
-              todayEvents.slice(0, 4).map(event => {
-                const typeLabel = event.type === 'tarefa' ? 'Tarefa' : event.type === 'reuniao' ? 'Reunião' : 'Lembrete';
-                return (
-                  <div key={event.id} className="flex items-center gap-3 p-4 bg-white dark:bg-zinc-950/40 rounded-2xl border border-zinc-100 dark:border-zinc-800/50 hover:border-blue-500/30 transition-all duration-300">
-                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: event.color || '#3b82f6' }} />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-bold text-zinc-900 dark:text-white truncate">{event.title}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider">{typeLabel}</span>
-                        {!event.isAllDay && event.startTime && (
-                          <span className="text-[9px] font-semibold text-zinc-500 flex items-center gap-0.5">
-                            <Clock size={9} /> {event.startTime}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
+          <button onClick={onGoToGoals} className="p-2.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-500 dark:text-zinc-400 rounded-2xl transition-all duration-300 group-hover:translate-x-1">
+            <ChevronRight size={18} />
+          </button>
         </div>
-
-        {/* Metas */}
-        <div className="bg-white/50 dark:bg-zinc-900/50 backdrop-blur-xl border border-zinc-200/50 dark:border-zinc-800/50 p-8 rounded-[3rem] shadow-sm space-y-6 relative overflow-hidden group">
-          <div className="absolute -right-8 -top-8 w-32 h-32 bg-emerald-500/5 blur-3xl rounded-full" />
-          <div className="flex justify-between items-center relative z-10">
-            <div className="space-y-1">
-              <h3 className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.3em]">Suas Metas</h3>
-              <p className="text-xs font-bold text-zinc-500">Progresso para seus sonhos</p>
-            </div>
-            <button onClick={onGoToGoals} className="p-2.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-500 dark:text-zinc-400 rounded-2xl transition-all duration-300 group-hover:translate-x-1">
-              <ChevronRight size={18} />
-            </button>
-          </div>
-          <div className="space-y-4 relative z-10">
-            {state.goals.length === 0 ? (
-              <div className="py-8 text-center space-y-3">
-                <div className="w-14 h-14 bg-zinc-100 dark:bg-zinc-800/50 rounded-3xl flex items-center justify-center mx-auto text-zinc-300 dark:text-zinc-600">
-                  <Target size={28} />
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-bold text-zinc-800 dark:text-zinc-200">Sem metas ativas</p>
-                  <p className="text-[11px] text-zinc-500">Que tal planejar seu próximo objetivo?</p>
-                </div>
+        <div className="relative z-10">
+          {state.goals.length === 0 ? (
+            <div className="py-8 text-center space-y-3">
+              <div className="w-14 h-14 bg-zinc-100 dark:bg-zinc-800/50 rounded-3xl flex items-center justify-center mx-auto text-zinc-300 dark:text-zinc-600">
+                <Target size={28} />
               </div>
-            ) : (
-              state.goals.slice(0, 2).map(goal => {
+              <div className="space-y-1">
+                <p className="text-sm font-bold text-zinc-800 dark:text-zinc-200">Sem metas ativas</p>
+                <p className="text-[11px] text-zinc-500">Que tal planejar seu próximo objetivo?</p>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {state.goals.slice(0, 2).map(goal => {
                 const percent = Math.min((goal.currentAmount / goal.targetAmount) * 100, 100);
                 const remaining = goal.targetAmount - goal.currentAmount;
                 return (
@@ -494,9 +405,9 @@ const Dashboard: React.FC<DashboardProps> = ({ state, isLoading, onUpdateFilters
                     <p className="text-[10px] text-zinc-400">Faltam {formatCurrency(Math.max(0, remaining))}</p>
                   </div>
                 );
-              })
-            )}
-          </div>
+              })}
+            </div>
+          )}
         </div>
       </div>
 
