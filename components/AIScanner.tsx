@@ -57,7 +57,7 @@ const AIScanner: React.FC<AIScannerProps> = ({ categories, onScanComplete, onClo
 
       const genAI = new GoogleGenerativeAI(apiKey);
       // Upgrading to gemini-2.0-flash as 1.5 is not available for this key
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' }, { apiVersion: 'v1beta' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-3.6-flash' }, { apiVersion: 'v1beta' });
 
       const base64Content = base64Data.split(',')[1];
 
