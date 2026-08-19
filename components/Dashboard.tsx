@@ -231,32 +231,9 @@ const Dashboard: React.FC<DashboardProps> = ({ state, isLoading, onUpdateFilters
             </div>
             
             <div className="flex items-end justify-between relative z-10 gap-2">
-              <p className="text-2xl sm:text-3xl font-black text-zinc-900 dark:text-white truncate tracking-tighter">
+              <p className="text-2xl sm:text-3xl font-black text-zinc-900 dark:text-white tracking-tighter">
                 {item.isCurrency === false ? item.value : formatCurrency(item.value as number)}
               </p>
-              
-              {item.label === 'Saldo Atual' && (
-                <div className="w-12 h-12 shrink-0">
-                  <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
-                    <path
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      className="text-zinc-100 dark:text-zinc-800"
-                    />
-                    <path
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      strokeDasharray="100, 100"
-                      strokeDashoffset={100 - (Math.max(0, Math.min(100, ((kpis.totalIncomes - kpis.totalExpenses) / (kpis.totalIncomes || 1)) * 100)))}
-                      className="text-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"
-                    />
-                  </svg>
-                </div>
-              )}
             </div>
             
             {/* Subtle Gradient Glow */}
