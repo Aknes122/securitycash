@@ -266,7 +266,16 @@ const App: React.FC = () => {
           )}
 
           {page === 'chat' && (
-            <ChatConsultant state={state} />
+            <ChatConsultant
+              state={state}
+              userId={session?.user?.id}
+              onAddTransaction={addTransaction}
+              onAddGoal={addGoal}
+              onUpdateGoal={updateGoal}
+              onAddReminder={addReminder}
+              onSetBaseSalary={setBaseSalary}
+              onAddCategory={addCategory}
+            />
           )}
 
           {page === 'profile' && (

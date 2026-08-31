@@ -75,3 +75,79 @@ export interface AppState {
 }
 
 export type Page = 'dashboard' | 'records' | 'categories' | 'comparison' | 'reminders' | 'goals' | 'profile' | 'installments' | 'chat';
+
+export type AIActionType = 
+  | 'add_transaction'
+  | 'add_goal'
+  | 'update_goal'
+  | 'add_reminder'
+  | 'set_base_salary'
+  | 'add_category';
+
+export interface AIActionAddTransaction {
+  type: 'add_transaction';
+  data: {
+    transactionType: TransactionType;
+    description: string;
+    amount: number;
+    date?: string;
+    categoryName?: string;
+  };
+}
+
+export interface AIActionAddGoal {
+  type: 'add_goal';
+  data: {
+    title: string;
+    targetAmount: number;
+    currentAmount?: number;
+    deadline?: string;
+  };
+}
+
+export interface AIActionUpdateGoal {
+  type: 'update_goal';
+  data: {
+    goalTitle: string;
+    amountToAdd: number;
+  };
+}
+
+export interface AIActionAddReminder {
+  type: 'add_reminder';
+  data: {
+    title: string;
+    amount: number;
+    dueDate: string;
+  };
+}
+
+export interface AIActionSetBaseSalary {
+  type: 'set_base_salary';
+  data: {
+    amount: number;
+  };
+}
+
+export interface AIActionAddCategory {
+  type: 'add_category';
+  data: {
+    name: string;
+    kind: TransactionType;
+  };
+}
+
+export type AIAction = 
+  | AIActionAddTransaction
+  | AIActionAddGoal
+  | AIActionUpdateGoal
+  | AIActionAddReminder
+  | AIActionSetBaseSalary
+  | AIActionAddCategory;
+
+export interface ExecutedActionResult {
+  actionType: AIActionType;
+  summary: string;
+  success: boolean;
+}
+

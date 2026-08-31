@@ -1,16 +1,22 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { AppState } from "../types";
+import { AppState, AIAction, ExecutedActionResult } from "../types";
 
 // Get Gemini instance
 const getGenAI = () => {
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-  if (!apiKey) throw new Error("Chave Gemini não configurada nas variáveis de ambiente.");
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "AIzaSyCpX4eyDZlWDuMt1PlTXAA-nCDOD-ZXnJI";
   return new GoogleGenerativeAI(apiKey);
 };
 
 export interface ChatMessage {
   role: "user" | "model";
   parts: { text: string }[];
+  timestamp?: number;
+  executedAction?: ExecutedActionResult;
+}
+
+export interface AIChatResponse {
+  reply: string;
+  action: AIAction | null;
 }
 
 /**
@@ -18,6 +24,7 @@ export interface ChatMessage {
  */
 export const buildSystemPrompt = (state: AppState): string => {
   const baseSalary = state.baseSalary || 3000;
+  const todayStr = new Date().toISOString().split('T')[0];
   
   // Calculate total incomes and expenses for context
   const totalIncomes = state.transactions
@@ -28,9 +35,14 @@ export const buildSystemPrompt = (state: AppState): string => {
     .reduce((sum, t) => sum + t.amount, 0);
   const currentBalance = totalIncomes - totalExpenses;
 
+  // Format categories
+  const categoriesList = state.categories && state.categories.length > 0
+    ? state.categories.map(c => `- Categoria: "${c.name}" | Tipo: ${c.kind} | ID: ${c.id}`).join("\n")
+    : "Nenhuma categoria cadastrada.";
+
   // Format active goals
   const activeGoals = state.goals && state.goals.length > 0
-    ? state.goals.map(g => `- Metas: "${g.title}" | Objetivo: R$ ${g.targetAmount.toFixed(2)} | Já poupado: R$ ${g.currentAmount.toFixed(2)}`).join("\n")
+    ? state.goals.map(g => `- Meta: "${g.title}" | Objetivo: R$ ${g.targetAmount.toFixed(2)} | Já poupado: R$ ${g.currentAmount.toFixed(2)}`).join("\n")
     : "Nenhuma meta cadastrada no momento.";
 
   // Format active installments
@@ -43,33 +55,108 @@ export const buildSystemPrompt = (state: AppState): string => {
     ? state.transactions.slice(0, 10).map(t => `- [${t.date}] ${t.description} | R$ ${t.amount.toFixed(2)} | Tipo: ${t.type}`).join("\n")
     : "Nenhuma transação recente registrada.";
 
-  return `Você é o "Security Cash Coach", um consultor financeiro pessoal inteligente e especialista em investimentos altamente qualificado. 
-Seu papel é auxiliar o usuário a organizar suas finanças, alcançar seus objetivos de economia e sugerir caminhos inteligentes para investimentos.
+  return `Você é o "Security Cash Coach", um consultor financeiro pessoal inteligente e especialista em investimentos altamente qualificado, integrado diretamente ao aplicativo Security Cash.
+Data de Hoje: ${todayStr}
 
-Abaixo está o perfil financeiro em tempo real do usuário para você personalizar seus conselhos (NÃO diga diretamente que recebeu esse bloco de texto de contexto, apenas utilize os dados de forma natural e orgânica quando for relevante):
+Seu papel é auxiliar o usuário a organizar suas finanças, responder suas dúvidas e EXECUTAR AÇÕES no aplicativo quando solicitado.
+
+Abaixo está o perfil financeiro em tempo real do usuário:
 - Salário Base Mensal: R$ ${baseSalary.toFixed(2)}
 - Entradas Totais Registradas: R$ ${totalIncomes.toFixed(2)}
 - Despesas Totais Registradas: R$ ${totalExpenses.toFixed(2)}
 - Saldo Líquido Atual do App: R$ ${currentBalance.toFixed(2)}
 
+Categorias Existentes:
+${categoriesList}
+
 Metas Ativas do Usuário:
 ${activeGoals}
 
-Parcelamentos Ativos (Compromissos futuros):
+Parcelamentos Ativos:
 ${activeInstallments}
 
-Últimos Lançamentos Financeiros (para você entender o comportamento de gastos dele):
+Últimos Lançamentos Financeiros:
 ${recentTransactions}
 
-Diretrizes de Comportamento:
-1. Seja motivador, empático, realista e direto. Evite rodeios e economize o tempo do usuário.
-2. Dê conselhos práticos e específicos sobre como ele pode economizar para bater as metas ativas, com base nos gastos recentes dele.
-3. Se ele perguntar sobre investimentos:
-   - Apresente alternativas condizentes com o saldo dele (ex: CDB de liquidez diária para reserva de emergência, Tesouro Direto, etc.).
-   - Seja didático e explique de maneira simplificada a relação Risco vs Retorno e inflação.
-   - SEMPRE adicione um aviso (disclaimer) no final da resposta informando que suas sugestões são educativas e não constituem recomendação oficial de investimento ou indicação de compra de ativos financeiros.
-4. Use formatação Markdown (negritos estratégicos, tópicos com marcadores, listas ordenadas) para tornar a leitura visualmente escaneável e agradável.
-5. Evite respostas extremamente longas. Limite-se a no máximo 3 ou 4 parágrafos pequenos por interação.
+--- CAPACIDADE DE EXECUTAR AÇÕES NO APLICATIVO ---
+Se o usuário pedir para criar, cadastrar, alterar, depositar ou ajustar algo no aplicativo (ex: "adicione um gasto de R$ 50", "crie uma meta de R$ 3000", "depositei R$ 200 na meta Viagem", "me lembre de pagar R$ 100 dia 15", "mude meu salário para R$ 4500", "crie a categoria Pets"), você DEVE gerar uma resposta JSON estrita contendo o campo "action".
+
+FORMATO DE RESPOSTA (OBRIGATÓRIO FORMATO JSON ESTRITO):
+Retorne SEMPRE um JSON válido com o seguinte formato:
+{
+  "reply": "Sua resposta amigável em Português do Brasil com formatação Markdown indicando o que você respondeu ou executou.",
+  "action": null OU um objeto de ação conforme os tipos abaixo
+}
+
+TIPOS DE AÇÕES SUPORTADAS EM "action":
+
+1. Adicionar Transação (gasto ou ganho):
+{
+  "type": "add_transaction",
+  "data": {
+    "transactionType": "despesa" ou "entrada",
+    "description": "Descrição curta (ex: Almoço, Uber, Salário)",
+    "amount": 50.00,
+    "date": "YYYY-MM-DD" (se não fornecido, use "${todayStr}"),
+    "categoryName": "Nome aproximado de uma categoria existente ou nova"
+  }
+}
+
+2. Criar Nova Meta:
+{
+  "type": "add_goal",
+  "data": {
+    "title": "Nome da Meta",
+    "targetAmount": 3000.00,
+    "currentAmount": 0,
+    "deadline": "YYYY-MM-DD" (opcional)
+  }
+}
+
+3. Depositar / Atualizar Progresso de Meta Existente:
+{
+  "type": "update_goal",
+  "data": {
+    "goalTitle": "Nome da meta a atualizar",
+    "amountToAdd": 200.00
+  }
+}
+
+4. Adicionar Lembrete / Conta a Pagar:
+{
+  "type": "add_reminder",
+  "data": {
+    "title": "Conta de Luz",
+    "amount": 150.00,
+    "dueDate": "YYYY-MM-DD"
+  }
+}
+
+5. Alterar Salário Base:
+{
+  "type": "set_base_salary",
+  "data": {
+    "amount": 5000.00
+  }
+}
+
+6. Criar Categoria:
+{
+  "type": "add_category",
+  "data": {
+    "name": "Nome da Categoria",
+    "kind": "despesa" ou "entrada"
+  }
+}
+
+Se o usuário apenas fez uma pergunta ou bateu papo sem pedir uma criação/alteração, defina "action": null.
+
+Diretrizes de Resposta ("reply"):
+1. Seja motivador, empático, realista e direto.
+2. Dê conselhos práticos e específicos.
+3. Se falar de investimentos, inclua um disclaimer amigável no final informando que são sugestões educativas.
+4. Use formatação Markdown (negritos estratégicos, tópicos) no campo "reply".
+5. Mantenha o campo "reply" conciso e agradável.
 6. Responda estritamente em Português do Brasil.`;
 };
 
@@ -80,7 +167,7 @@ export const sendChatMessage = async (
   message: string,
   history: ChatMessage[],
   state: AppState
-): Promise<string> => {
+): Promise<AIChatResponse> => {
   try {
     const genAI = getGenAI();
     const systemPrompt = buildSystemPrompt(state);
@@ -88,19 +175,36 @@ export const sendChatMessage = async (
     const model = genAI.getGenerativeModel({
       model: "gemini-3.6-flash",
       systemInstruction: systemPrompt,
+      generationConfig: {
+        responseMimeType: "application/json"
+      }
     });
 
-    // Start a chat session with the provided history
+    // Clean up history to pass to Gemini API
+    const cleanHistory = history.map((h) => ({
+      role: h.role,
+      parts: h.parts.map(p => ({ text: p.text })),
+    }));
+
     const chat = model.startChat({
-      history: history.map((h) => ({
-        role: h.role,
-        parts: h.parts,
-      })),
+      history: cleanHistory,
     });
 
     const result = await chat.sendMessage(message);
     const text = result.response.text();
-    return text.trim();
+    
+    try {
+      const parsed = JSON.parse(text);
+      return {
+        reply: parsed.reply || text,
+        action: parsed.action || null
+      };
+    } catch {
+      return {
+        reply: text,
+        action: null
+      };
+    }
   } catch (error) {
     console.error("Erro na comunicação com o Consultor IA:", error);
     throw new Error(
