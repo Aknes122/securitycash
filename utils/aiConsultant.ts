@@ -3,7 +3,12 @@ import { AppState, AIAction, ExecutedActionResult } from "../types";
 
 // Get Gemini instance
 const getGenAI = () => {
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "AIzaSyCpX4eyDZlWDuMt1PlTXAA-nCDOD-ZXnJI";
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error(
+      "Chave de API do Gemini não encontrada. Por favor, crie uma chave gratuita em https://aistudio.google.com/app/apikey e adicione VITE_GEMINI_API_KEY no seu arquivo .env.local"
+    );
+  }
   return new GoogleGenerativeAI(apiKey);
 };
 
@@ -172,8 +177,9 @@ export const sendChatMessage = async (
     const genAI = getGenAI();
     const systemPrompt = buildSystemPrompt(state);
     
+    // Use gemini-1.5-flash as default official model
     const model = genAI.getGenerativeModel({
-      model: "gemini-3.6-flash",
+      model: "gemini-1.5-flash",
       systemInstruction: systemPrompt,
       generationConfig: {
         responseMimeType: "application/json"
@@ -207,8 +213,12 @@ export const sendChatMessage = async (
     }
   } catch (error) {
     console.error("Erro na comunicação com o Consultor IA:", error);
-    throw new Error(
-      error instanceof Error ? error.message : "Erro desconhecido ao falar com o Consultor IA."
-    );
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    if (errorMsg.includes("leaked") || errorMsg.includes("403") || errorMsg.includes("API key")) {
+      throw new Error(
+        "A chave de API do Gemini foi revogada ou expirou. Por favor, crie uma nova chave gratuita em https://aistudio.google.com/app/apikey e adicione VITE_GEMINI_API_KEY no seu arquivo .env.local"
+      );
+    }
+    throw new Error(errorMsg);
   }
 };

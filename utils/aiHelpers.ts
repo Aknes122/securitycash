@@ -21,7 +21,7 @@ export const generateCognitiveImpact = async (
     const hoursCost = Math.ceil(amount / hourlyWage);
 
     const genAI = getGenAI();
-    const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const goalContext = closestGoalName
       ? `e essa quantia também é o dinheiro que iria para a meta '${closestGoalName}'`
@@ -56,7 +56,7 @@ Não precisa dar oi, retorne APENAS a frase de alerta de IA. Exemplo: "Esse ifoo
 export const generateDashboardInsight = async (transactionsContext: string): Promise<string> => {
   try {
     const genAI = getGenAI();
-    const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const prompt = `Aqui está um resumo recente do comportamento financeiro de um usuário do meu app (incluindo maiores categorias de gasto ou valores listados):
 ${transactionsContext}
@@ -82,7 +82,7 @@ export const parseNaturalLanguageTransaction = async (
 ): Promise<{ amount: number; description: string; categoryId: string; type: 'despesa'|'entrada'; date: string }[]> => {
   try {
     const genAI = getGenAI();
-    const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const catsContext = categories.map(c => `ID: ${c.id} | Nome: ${c.name} | Tipo: ${c.kind}`).join('\n');
     
@@ -127,7 +127,7 @@ export const generateAdvancedDashboardInsight = async (
 ): Promise<{ healthScore: number; insight: string; anomaly: string | null }> => {
   try {
     const genAI = getGenAI();
-    const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const currExpenses = currentMonthTransactions.reduce((acc, t) => t.type === 'despesa' ? acc + t.amount : acc, 0);
     const lastExpenses = lastMonthTransactions.reduce((acc, t) => t.type === 'despesa' ? acc + t.amount : acc, 0);
@@ -179,7 +179,7 @@ export const parseBankStatement = async (
 ): Promise<{ transactions: Omit<Transaction, 'id'>[], newCategories: Omit<Category, 'id'>[] }> => {
   try {
     const genAI = getGenAI();
-    const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const catsContext = categories.map(c => `ID: ${c.id} | Nome: ${c.name} | Tipo: ${c.kind}`).join('\n');
 
