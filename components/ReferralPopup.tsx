@@ -45,7 +45,7 @@ const ReferralPopup: React.FC<ReferralPopupProps> = ({ onClose }) => {
               Indique e Ganhe PRO
             </h3>
             <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed font-medium">
-              Convide um amigo e ganhe <span className="text-blue-600 dark:text-blue-400 font-bold">30 dias de acesso gratuito</span> a todos os recursos premium do FinWise.
+              Convide um amigo e ganhe <span className="text-blue-600 dark:text-blue-400 font-bold">30 dias de acesso gratuito</span> a todos os recursos premium do Security Cash.
             </p>
           </div>
 

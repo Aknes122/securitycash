@@ -35,7 +35,7 @@ const App: React.FC = () => {
   const [page, setPage] = useState<Page>('dashboard');
   // const [isLoggedOut, setIsLoggedOut] = useState(false); // Removido mock state
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    const saved = localStorage.getItem('finwise_theme');
+    const saved = localStorage.getItem('securitycash_theme');
     return (saved as 'light' | 'dark') || 'dark';
   });
 
@@ -130,7 +130,7 @@ const App: React.FC = () => {
     } else {
       document.documentElement.classList.remove('dark');
     }
-    localStorage.setItem('finwise_theme', theme);
+    localStorage.setItem('securitycash_theme', theme);
   }, [theme]);
 
   // Lógica para o Popup de Indicação (Uma vez a cada 7 dias)
