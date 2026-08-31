@@ -3,7 +3,10 @@ import { Category, Transaction } from "../types";
 
 // Obter a instância com a API Key do projeto
 const getGenAI = () => {
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "AIzaSyCpX4eyDZlWDuMt1PlTXAA-nCDOD-ZXnJI";
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("Chave de API do Gemini não encontrada.");
+  }
   return new GoogleGenerativeAI(apiKey);
 };
 
