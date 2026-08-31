@@ -176,47 +176,78 @@ export const sendChatMessage = async (
   try {
     const genAI = getGenAI();
     const systemPrompt = buildSystemPrompt(state);
-    
-    // Use gemini-1.5-flash as default official model
-    const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
-      systemInstruction: systemPrompt,
-      generationConfig: {
-        responseMimeType: "application/json"
-      }
-    });
 
-    // Clean up history to pass to Gemini API
     const cleanHistory = history.map((h) => ({
       role: h.role,
-      parts: h.parts.map(p => ({ text: p.text })),
+      parts: h.parts.map((p) => ({ text: p.text })),
     }));
 
-    const chat = model.startChat({
-      history: cleanHistory,
-    });
+    // Tentar modelos suportados pela API Gemini em ordem
+    const candidateModels = [
+      "gemini-2.0-flash",
+      "gemini-1.5-flash",
+      "gemini-2.5-flash",
+      "gemini-1.5-pro",
+    ];
 
-    const result = await chat.sendMessage(message);
-    const text = result.response.text();
-    
+    let resultText = "";
+    let lastErr: any = null;
+
+    for (const modelName of candidateModels) {
+      try {
+        const model = genAI.getGenerativeModel({
+          model: modelName,
+          systemInstruction: systemPrompt,
+          generationConfig: {
+            responseMimeType: "application/json",
+          },
+        });
+
+        const chat = model.startChat({
+          history: cleanHistory,
+        });
+
+        const result = await chat.sendMessage(message);
+        resultText = result.response.text();
+        lastErr = null;
+        break;
+      } catch (err) {
+        lastErr = err;
+      }
+    }
+
+    if (lastErr && !resultText) {
+      throw lastErr;
+    }
+
     try {
-      const parsed = JSON.parse(text);
+      const parsed = JSON.parse(resultText);
       return {
-        reply: parsed.reply || text,
-        action: parsed.action || null
+        reply: parsed.reply || resultText,
+        action: parsed.action || null,
       };
     } catch {
       return {
-        reply: text,
-        action: null
+        reply: resultText,
+        action: null,
       };
     }
   } catch (error) {
     console.error("Erro na comunicação com o Consultor IA:", error);
     const errorMsg = error instanceof Error ? error.message : String(error);
-    if (errorMsg.includes("leaked") || errorMsg.includes("403") || errorMsg.includes("API key")) {
+    if (
+      errorMsg.includes("leaked") ||
+      errorMsg.includes("403") ||
+      errorMsg.includes("API key") ||
+      errorMsg.includes("Key not valid")
+    ) {
       throw new Error(
-        "A chave de API do Gemini foi revogada ou expirou. Por favor, crie uma nova chave gratuita em https://aistudio.google.com/app/apikey e adicione VITE_GEMINI_API_KEY no seu arquivo .env.local"
+        "Sua chave de API do Gemini precisa ser atualizada. Obtenha uma chave gratuita no Google AI Studio (https://aistudio.google.com/app/apikey) e cole no arquivo .env.local"
+      );
+    }
+    if (errorMsg.includes("not found") || errorMsg.includes("404")) {
+      throw new Error(
+        "Nenhum modelo do Gemini respondeu para esta chave. Verifique se a chave no .env.local é uma chave de API válida do Google AI Studio (começa com 'AIzaSy...')"
       );
     }
     throw new Error(errorMsg);
