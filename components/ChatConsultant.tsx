@@ -14,8 +14,6 @@ import {
   Sparkles,
   CheckCircle2,
   Wand2,
-  Key,
-  Check,
 } from "lucide-react";
 
 interface ChatConsultantProps {
@@ -43,11 +41,6 @@ const ChatConsultant: React.FC<ChatConsultantProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Estado para edição manual de chave API no app
-  const [showKeyModal, setShowKeyModal] = useState(false);
-  const [keyInput, setKeyInput] = useState(() => localStorage.getItem("securitycash_gemini_key") || "");
-  const [keySavedBadge, setKeySavedBadge] = useState(false);
-
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -57,21 +50,6 @@ const ChatConsultant: React.FC<ChatConsultantProps> = ({
   useEffect(() => {
     scrollToBottom();
   }, [messages, isLoading]);
-
-  const handleSaveCustomKey = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (keyInput.trim()) {
-      localStorage.setItem("securitycash_gemini_key", keyInput.trim());
-    } else {
-      localStorage.removeItem("securitycash_gemini_key");
-    }
-    setErrorMsg(null);
-    setKeySavedBadge(true);
-    setTimeout(() => {
-      setKeySavedBadge(false);
-      setShowKeyModal(false);
-    }, 1500);
-  };
 
   // Função para executar ações solicitadas pela IA no estado da loja
   const executeAIAction = (action: AIAction): ExecutedActionResult => {
@@ -366,27 +344,16 @@ const ChatConsultant: React.FC<ChatConsultantProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        {messages.length > 0 && (
           <button
-            onClick={() => setShowKeyModal(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-semibold transition-all"
-            title="Configurar Chave API do Gemini"
+            onClick={handleClearChat}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-zinc-500 dark:text-zinc-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl text-xs font-medium transition-all"
+            title="Limpar chat"
           >
-            <Key size={13} className="text-amber-500" />
-            <span className="hidden sm:inline">Chave Gemini</span>
+            <Trash2 size={13} />
+            <span className="hidden sm:inline">Encerrar</span>
           </button>
-
-          {messages.length > 0 && (
-            <button
-              onClick={handleClearChat}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-zinc-500 dark:text-zinc-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl text-xs font-medium transition-all"
-              title="Limpar chat"
-            >
-              <Trash2 size={13} />
-              <span className="hidden sm:inline">Encerrar</span>
-            </button>
-          )}
-        </div>
+        )}
       </header>
 
       {/* Messages / Welcome */}
@@ -525,27 +492,18 @@ const ChatConsultant: React.FC<ChatConsultantProps> = ({
               </div>
             )}
 
-            {/* Error + Inline Key Setup */}
+            {/* Error */}
             {errorMsg && (
-              <div className="flex flex-col gap-3 p-4 bg-rose-50 dark:bg-rose-500/5 border border-rose-200 dark:border-rose-500/20 rounded-2xl animate-in fade-in">
-                <div className="flex items-start gap-3">
-                  <AlertCircle size={16} className="text-rose-500 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-semibold text-rose-700 dark:text-rose-400">
-                      Erro na análise
-                    </p>
-                    <p className="text-xs text-rose-500 dark:text-rose-500 mt-0.5 leading-relaxed">
-                      {errorMsg}
-                    </p>
-                  </div>
+              <div className="flex gap-3 p-4 bg-rose-50 dark:bg-rose-500/5 border border-rose-200 dark:border-rose-500/20 rounded-2xl animate-in fade-in">
+                <AlertCircle size={16} className="text-rose-500 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-rose-700 dark:text-rose-400">
+                    Erro na análise
+                  </p>
+                  <p className="text-xs text-rose-500 dark:text-rose-500 mt-0.5 leading-relaxed">
+                    {errorMsg}
+                  </p>
                 </div>
-                <button
-                  onClick={() => setShowKeyModal(true)}
-                  className="self-start mt-1 flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition-all shadow-sm"
-                >
-                  <Key size={13} />
-                  Inserir/Atualizar Chave Gemini Aqui
-                </button>
               </div>
             )}
 
@@ -584,69 +542,6 @@ const ChatConsultant: React.FC<ChatConsultantProps> = ({
           </button>
         </form>
       </div>
-
-      {/* MODAL CONFIGURAÇÃO DE CHAVE API GEMINI */}
-      {showKeyModal && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="w-full max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-2xl relative animate-in zoom-in duration-200 text-zinc-900 dark:text-white">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
-                  <Key size={16} />
-                </div>
-                <h3 className="text-base font-bold">Chave API do Gemini</h3>
-              </div>
-              <button
-                onClick={() => setShowKeyModal(false)}
-                className="text-xs font-semibold text-zinc-400 hover:text-zinc-700 dark:hover:text-white"
-              >
-                Fechar
-              </button>
-            </div>
-
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4 leading-relaxed">
-              Insira sua chave de API do Gemini para uso direto no seu navegador. Isso substitui instantaneamente qualquer configuração antiga sem precisar refazer o build!
-            </p>
-
-            <form onSubmit={handleSaveCustomKey} className="space-y-4">
-              <div>
-                <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 block mb-1.5">
-                  Sua Chave API (AQ... ou AIza...)
-                </label>
-                <input
-                  type="text"
-                  value={keyInput}
-                  onChange={(e) => setKeyInput(e.target.value)}
-                  placeholder="Cole sua API Key aqui..."
-                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-zinc-900 dark:text-white placeholder-zinc-400 outline-none focus:ring-2 focus:ring-amber-500/30 transition-all font-mono"
-                />
-              </div>
-
-              {keySavedBadge && (
-                <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
-                  <Check size={14} /> Chave salva com sucesso!
-                </div>
-              )}
-
-              <div className="flex gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => setShowKeyModal(false)}
-                  className="flex-1 py-2.5 bg-zinc-100 dark:bg-zinc-800 hover:opacity-80 rounded-xl text-xs font-bold text-zinc-600 dark:text-zinc-300 transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-2.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:opacity-90 rounded-xl text-xs font-bold transition-all shadow-md"
-                >
-                  Salvar Chave
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

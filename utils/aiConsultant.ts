@@ -3,13 +3,7 @@ import { AppState, AIAction, ExecutedActionResult } from "../types";
 
 // Get Gemini instance
 const getGenAI = () => {
-  const storedKey = typeof window !== 'undefined' ? localStorage.getItem('securitycash_gemini_key') : null;
-  const apiKey = (storedKey && storedKey.trim()) || import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error(
-      "Chave de API do Gemini não configurada. Cole sua chave no aplicativo ou no arquivo .env.local"
-    );
-  }
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.GEMINI_API_KEY || "AIzaSyDRN-VxpOQTVesqGXe3_dQi9fnftsQTWmI";
   return new GoogleGenerativeAI(apiKey.trim());
 };
 
@@ -183,13 +177,11 @@ export const sendChatMessage = async (
       parts: h.parts.map((p) => ({ text: p.text })),
     }));
 
-    // Lista estendida de nomes de modelos do Gemini para resiliência máxima
     const candidateModels = [
       "gemini-2.0-flash",
       "gemini-1.5-flash",
       "gemini-2.5-flash",
       "gemini-1.5-pro",
-      "gemini-2.0-flash-exp",
     ];
 
     let resultText = "";
@@ -198,16 +190,13 @@ export const sendChatMessage = async (
     // Tentativa 1: Com JSON estruturado
     for (const modelName of candidateModels) {
       try {
-        const model = genAI.getGenerativeModel(
-          {
-            model: modelName,
-            systemInstruction: systemPrompt,
-            generationConfig: {
-              responseMimeType: "application/json",
-            },
+        const model = genAI.getGenerativeModel({
+          model: modelName,
+          systemInstruction: systemPrompt,
+          generationConfig: {
+            responseMimeType: "application/json",
           },
-          { apiVersion: "v1beta" }
-        );
+        });
 
         const chat = model.startChat({
           history: cleanHistory,
@@ -222,7 +211,7 @@ export const sendChatMessage = async (
       }
     }
 
-    // Tentativa 2: Fallback sem JSON estrito caso a API rechace responseMimeType
+    // Tentativa 2: Fallback sem JSON estrito
     if (!resultText) {
       for (const modelName of candidateModels) {
         try {
@@ -264,21 +253,6 @@ export const sendChatMessage = async (
   } catch (error) {
     console.error("Erro na comunicação com o Consultor IA:", error);
     const errorMsg = error instanceof Error ? error.message : String(error);
-    if (
-      errorMsg.includes("leaked") ||
-      errorMsg.includes("403") ||
-      errorMsg.includes("API key") ||
-      errorMsg.includes("Key not valid")
-    ) {
-      throw new Error(
-        "Sua chave de API do Gemini precisa ser atualizada no arquivo .env.local"
-      );
-    }
-    if (errorMsg.includes("not found") || errorMsg.includes("404")) {
-      throw new Error(
-        "Erro de conexão com o Gemini (404/Not Found). Verifique se o serviço 'Generative Language API' está ativado no Google Cloud ou gere uma chave no AI Studio."
-      );
-    }
     throw new Error(errorMsg);
   }
 };

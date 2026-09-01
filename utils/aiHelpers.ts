@@ -3,11 +3,7 @@ import { Category, Transaction } from "../types";
 
 // Obter a instância com a API Key do projeto
 const getGenAI = () => {
-  const storedKey = typeof window !== 'undefined' ? localStorage.getItem('securitycash_gemini_key') : null;
-  const apiKey = (storedKey && storedKey.trim()) || import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error("Chave de API do Gemini não encontrada.");
-  }
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.GEMINI_API_KEY || "AIzaSyDRN-VxpOQTVesqGXe3_dQi9fnftsQTWmI";
   return new GoogleGenerativeAI(apiKey.trim());
 };
 
