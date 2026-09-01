@@ -3,13 +3,14 @@ import { AppState, AIAction, ExecutedActionResult } from "../types";
 
 // Get Gemini instance
 const getGenAI = () => {
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.GEMINI_API_KEY;
+  const storedKey = typeof window !== 'undefined' ? localStorage.getItem('securitycash_gemini_key') : null;
+  const apiKey = (storedKey && storedKey.trim()) || import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error(
-      "Chave de API do Gemini não encontrada. Por favor, crie uma chave gratuita em https://aistudio.google.com/app/apikey e adicione VITE_GEMINI_API_KEY no seu arquivo .env.local"
+      "Chave de API do Gemini não configurada. Cole sua chave no aplicativo ou no arquivo .env.local"
     );
   }
-  return new GoogleGenerativeAI(apiKey);
+  return new GoogleGenerativeAI(apiKey.trim());
 };
 
 export interface ChatMessage {
@@ -182,26 +183,31 @@ export const sendChatMessage = async (
       parts: h.parts.map((p) => ({ text: p.text })),
     }));
 
-    // Tentar modelos suportados pela API Gemini em ordem
+    // Lista estendida de nomes de modelos do Gemini para resiliência máxima
     const candidateModels = [
       "gemini-2.0-flash",
       "gemini-1.5-flash",
       "gemini-2.5-flash",
       "gemini-1.5-pro",
+      "gemini-2.0-flash-exp",
     ];
 
     let resultText = "";
     let lastErr: any = null;
 
+    // Tentativa 1: Com JSON estruturado
     for (const modelName of candidateModels) {
       try {
-        const model = genAI.getGenerativeModel({
-          model: modelName,
-          systemInstruction: systemPrompt,
-          generationConfig: {
-            responseMimeType: "application/json",
+        const model = genAI.getGenerativeModel(
+          {
+            model: modelName,
+            systemInstruction: systemPrompt,
+            generationConfig: {
+              responseMimeType: "application/json",
+            },
           },
-        });
+          { apiVersion: "v1beta" }
+        );
 
         const chat = model.startChat({
           history: cleanHistory,
@@ -213,6 +219,29 @@ export const sendChatMessage = async (
         break;
       } catch (err) {
         lastErr = err;
+      }
+    }
+
+    // Tentativa 2: Fallback sem JSON estrito caso a API rechace responseMimeType
+    if (!resultText) {
+      for (const modelName of candidateModels) {
+        try {
+          const model = genAI.getGenerativeModel({
+            model: modelName,
+            systemInstruction: systemPrompt,
+          });
+
+          const chat = model.startChat({
+            history: cleanHistory,
+          });
+
+          const result = await chat.sendMessage(message);
+          resultText = result.response.text();
+          lastErr = null;
+          break;
+        } catch (err) {
+          lastErr = err;
+        }
       }
     }
 
@@ -242,12 +271,12 @@ export const sendChatMessage = async (
       errorMsg.includes("Key not valid")
     ) {
       throw new Error(
-        "Sua chave de API do Gemini precisa ser atualizada. Obtenha uma chave gratuita no Google AI Studio (https://aistudio.google.com/app/apikey) e cole no arquivo .env.local"
+        "Sua chave de API do Gemini precisa ser atualizada no arquivo .env.local"
       );
     }
     if (errorMsg.includes("not found") || errorMsg.includes("404")) {
       throw new Error(
-        "Nenhum modelo do Gemini respondeu para esta chave. Verifique se a chave no .env.local é uma chave de API válida do Google AI Studio (começa com 'AIzaSy...')"
+        "Erro de conexão com o Gemini (404/Not Found). Verifique se o serviço 'Generative Language API' está ativado no Google Cloud ou gere uma chave no AI Studio."
       );
     }
     throw new Error(errorMsg);

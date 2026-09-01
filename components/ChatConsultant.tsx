@@ -12,9 +12,10 @@ import {
   BarChart3,
   UserCircle2,
   Sparkles,
-  Clock,
   CheckCircle2,
   Wand2,
+  Key,
+  Check,
 } from "lucide-react";
 
 interface ChatConsultantProps {
@@ -28,11 +29,8 @@ interface ChatConsultantProps {
   onAddCategory?: (category: Omit<Category, "id">) => void;
 }
 
-const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
-
 const ChatConsultant: React.FC<ChatConsultantProps> = ({
   state,
-  userId,
   onAddTransaction,
   onAddGoal,
   onUpdateGoal,
@@ -40,43 +38,17 @@ const ChatConsultant: React.FC<ChatConsultantProps> = ({
   onSetBaseSalary,
   onAddCategory,
 }) => {
-  const CHAT_STORAGE_KEY = `securitycash_chat_${userId || "guest"}`;
-
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // Estado para edição manual de chave API no app
+  const [showKeyModal, setShowKeyModal] = useState(false);
+  const [keyInput, setKeyInput] = useState(() => localStorage.getItem("securitycash_gemini_key") || "");
+  const [keySavedBadge, setKeySavedBadge] = useState(false);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // Carregar histórico salvo do localStorage filtrando apenas as mensagens das últimas 24h
-  useEffect(() => {
-    const saved = localStorage.getItem(CHAT_STORAGE_KEY);
-    if (saved) {
-      try {
-        const parsed: ChatMessage[] = JSON.parse(saved);
-        const now = Date.now();
-        const valid = parsed.filter(
-          (m) => m.timestamp && now - m.timestamp < TWENTY_FOUR_HOURS_MS
-        );
-        setMessages(valid);
-        if (valid.length !== parsed.length) {
-          localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(valid));
-        }
-      } catch (e) {
-        console.error("Erro ao carregar histórico de mensagens:", e);
-      }
-    }
-  }, [CHAT_STORAGE_KEY]);
-
-  const saveMessages = (newMessages: ChatMessage[]) => {
-    const now = Date.now();
-    const valid = newMessages.filter(
-      (m) => m.timestamp && now - m.timestamp < TWENTY_FOUR_HOURS_MS
-    );
-    setMessages(valid);
-    localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(valid));
-  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -86,7 +58,22 @@ const ChatConsultant: React.FC<ChatConsultantProps> = ({
     scrollToBottom();
   }, [messages, isLoading]);
 
-  // Função para executar ações solcitadas pela IA no estado da loja
+  const handleSaveCustomKey = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (keyInput.trim()) {
+      localStorage.setItem("securitycash_gemini_key", keyInput.trim());
+    } else {
+      localStorage.removeItem("securitycash_gemini_key");
+    }
+    setErrorMsg(null);
+    setKeySavedBadge(true);
+    setTimeout(() => {
+      setKeySavedBadge(false);
+      setShowKeyModal(false);
+    }, 1500);
+  };
+
+  // Função para executar ações solicitadas pela IA no estado da loja
   const executeAIAction = (action: AIAction): ExecutedActionResult => {
     const actionType = action.type;
     try {
@@ -233,15 +220,13 @@ const ChatConsultant: React.FC<ChatConsultantProps> = ({
     setInputValue("");
     setErrorMsg(null);
 
-    const now = Date.now();
     const newUserMessage: ChatMessage = {
       role: "user",
       parts: [{ text: userMessageText }],
-      timestamp: now,
     };
 
     const updatedMessages = [...messages, newUserMessage];
-    saveMessages(updatedMessages);
+    setMessages(updatedMessages);
     setIsLoading(true);
 
     try {
@@ -255,11 +240,10 @@ const ChatConsultant: React.FC<ChatConsultantProps> = ({
       const newAiMessage: ChatMessage = {
         role: "model",
         parts: [{ text: aiResponse.reply }],
-        timestamp: Date.now(),
         executedAction,
       };
 
-      saveMessages([...updatedMessages, newAiMessage]);
+      setMessages([...updatedMessages, newAiMessage]);
     } catch (err) {
       console.error(err);
       setErrorMsg(
@@ -271,10 +255,9 @@ const ChatConsultant: React.FC<ChatConsultantProps> = ({
   };
 
   const handleClearChat = () => {
-    if (window.confirm("Deseja encerrar essa sessão e limpar o histórico de conversas?")) {
+    if (window.confirm("Deseja encerrar essa sessão e limpar as conversas da tela?")) {
       setMessages([]);
       setErrorMsg(null);
-      localStorage.removeItem(CHAT_STORAGE_KEY);
     }
   };
 
@@ -366,7 +349,7 @@ const ChatConsultant: React.FC<ChatConsultantProps> = ({
   const userName = state.userName || "você";
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)] lg:h-[calc(100vh-6rem)] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/70 rounded-3xl overflow-hidden shadow-sm">
+    <div className="flex flex-col h-[calc(100vh-8rem)] lg:h-[calc(100vh-6rem)] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/70 rounded-3xl overflow-hidden shadow-sm relative">
       {/* Header */}
       <header className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
@@ -374,30 +357,36 @@ const ChatConsultant: React.FC<ChatConsultantProps> = ({
             <Sparkles size={16} className="text-white dark:text-zinc-900" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-sm font-bold text-zinc-900 dark:text-white leading-tight">
-                Meu Assessor Interativo
-              </h2>
-              <span className="inline-flex items-center gap-1 text-[10px] bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold px-2 py-0.5 rounded-full border border-blue-200/50 dark:border-blue-500/20">
-                <Clock size={10} /> Salvo por 24h
-              </span>
-            </div>
+            <h2 className="text-sm font-bold text-zinc-900 dark:text-white leading-tight">
+              Meu Assessor Interativo
+            </h2>
             <p className="text-[11px] text-zinc-400 dark:text-zinc-500 leading-tight">
               Lê dados e edita o aplicativo em tempo real
             </p>
           </div>
         </div>
 
-        {messages.length > 0 && (
+        <div className="flex items-center gap-2">
           <button
-            onClick={handleClearChat}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-zinc-500 dark:text-zinc-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl text-xs font-medium transition-all"
-            title="Limpar histórico"
+            onClick={() => setShowKeyModal(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-semibold transition-all"
+            title="Configurar Chave API do Gemini"
           >
-            <Trash2 size={13} />
-            <span className="hidden sm:inline">Limpar Chat</span>
+            <Key size={13} className="text-amber-500" />
+            <span className="hidden sm:inline">Chave Gemini</span>
           </button>
-        )}
+
+          {messages.length > 0 && (
+            <button
+              onClick={handleClearChat}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-zinc-500 dark:text-zinc-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl text-xs font-medium transition-all"
+              title="Limpar chat"
+            >
+              <Trash2 size={13} />
+              <span className="hidden sm:inline">Encerrar</span>
+            </button>
+          )}
+        </div>
       </header>
 
       {/* Messages / Welcome */}
@@ -446,7 +435,7 @@ const ChatConsultant: React.FC<ChatConsultantProps> = ({
             </div>
 
             <p className="text-[11px] text-zinc-300 dark:text-zinc-600 text-center leading-relaxed">
-              Histórico mantido localmente por 24h. As análises e ações são executadas diretamente no seu app.
+              As análises e ações são executadas em tempo real no seu aplicativo.
             </p>
           </div>
         ) : (
@@ -536,18 +525,27 @@ const ChatConsultant: React.FC<ChatConsultantProps> = ({
               </div>
             )}
 
-            {/* Error */}
+            {/* Error + Inline Key Setup */}
             {errorMsg && (
-              <div className="flex gap-3 p-4 bg-rose-50 dark:bg-rose-500/5 border border-rose-200 dark:border-rose-500/20 rounded-2xl">
-                <AlertCircle size={16} className="text-rose-500 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-semibold text-rose-700 dark:text-rose-400">
-                    Erro na análise
-                  </p>
-                  <p className="text-xs text-rose-500 dark:text-rose-500 mt-0.5 leading-relaxed">
-                    {errorMsg}
-                  </p>
+              <div className="flex flex-col gap-3 p-4 bg-rose-50 dark:bg-rose-500/5 border border-rose-200 dark:border-rose-500/20 rounded-2xl animate-in fade-in">
+                <div className="flex items-start gap-3">
+                  <AlertCircle size={16} className="text-rose-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-rose-700 dark:text-rose-400">
+                      Erro na análise
+                    </p>
+                    <p className="text-xs text-rose-500 dark:text-rose-500 mt-0.5 leading-relaxed">
+                      {errorMsg}
+                    </p>
+                  </div>
                 </div>
+                <button
+                  onClick={() => setShowKeyModal(true)}
+                  className="self-start mt-1 flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition-all shadow-sm"
+                >
+                  <Key size={13} />
+                  Inserir/Atualizar Chave Gemini Aqui
+                </button>
               </div>
             )}
 
@@ -586,6 +584,69 @@ const ChatConsultant: React.FC<ChatConsultantProps> = ({
           </button>
         </form>
       </div>
+
+      {/* MODAL CONFIGURAÇÃO DE CHAVE API GEMINI */}
+      {showKeyModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-2xl relative animate-in zoom-in duration-200 text-zinc-900 dark:text-white">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
+                  <Key size={16} />
+                </div>
+                <h3 className="text-base font-bold">Chave API do Gemini</h3>
+              </div>
+              <button
+                onClick={() => setShowKeyModal(false)}
+                className="text-xs font-semibold text-zinc-400 hover:text-zinc-700 dark:hover:text-white"
+              >
+                Fechar
+              </button>
+            </div>
+
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4 leading-relaxed">
+              Insira sua chave de API do Gemini para uso direto no seu navegador. Isso substitui instantaneamente qualquer configuração antiga sem precisar refazer o build!
+            </p>
+
+            <form onSubmit={handleSaveCustomKey} className="space-y-4">
+              <div>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 block mb-1.5">
+                  Sua Chave API (AQ... ou AIza...)
+                </label>
+                <input
+                  type="text"
+                  value={keyInput}
+                  onChange={(e) => setKeyInput(e.target.value)}
+                  placeholder="Cole sua API Key aqui..."
+                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-zinc-900 dark:text-white placeholder-zinc-400 outline-none focus:ring-2 focus:ring-amber-500/30 transition-all font-mono"
+                />
+              </div>
+
+              {keySavedBadge && (
+                <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
+                  <Check size={14} /> Chave salva com sucesso!
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowKeyModal(false)}
+                  className="flex-1 py-2.5 bg-zinc-100 dark:bg-zinc-800 hover:opacity-80 rounded-xl text-xs font-bold text-zinc-600 dark:text-zinc-300 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:opacity-90 rounded-xl text-xs font-bold transition-all shadow-md"
+                >
+                  Salvar Chave
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
